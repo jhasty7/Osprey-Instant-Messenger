@@ -167,7 +167,11 @@ public class Client extends Application {
     public void displayMessage(String text) {
         textArea.appendText(text + "\n");
     }
-
+    
+    
+    
+    
+    
     public void checkLockButtons() {
         if (receiverLockButton.isDisable() && senderLockButton.isDisable()) {
             connectButton.setDisable(false);
