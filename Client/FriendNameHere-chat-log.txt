@@ -1,0 +1,7 @@
+test
+test
+test
+Josh: Testing
+Josh: Is this working
+Josh: This is just to test the window
+Josh: and not send message back and forth

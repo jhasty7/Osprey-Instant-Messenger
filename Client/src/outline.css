@@ -1,0 +1,10 @@
+.label {
+    -fx-font-size: 24px;
+    -fx-font-width: 10px;
+    -fx-font-family: "Segoe UI Semibold";
+}
+.outline.label .text {
+    -fx-fill: whitesmoke;
+    -fx-stroke: black;
+    -fx-stroke-width: 1px;
+}

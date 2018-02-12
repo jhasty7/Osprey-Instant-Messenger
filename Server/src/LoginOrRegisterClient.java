@@ -19,7 +19,8 @@ public class LoginOrRegisterClient implements Runnable {
     private ServerInstructions instruction;
     //Assumed Packet class (might not need this)
     LoginRegisterPacket packet;
-
+    
+    
     public LoginOrRegisterClient(Socket client, Server myServer) {
         this.myServer = myServer;
         this.client = client;

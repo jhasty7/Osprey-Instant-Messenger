@@ -40,8 +40,8 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket client, Server myServer) throws IOException {
         this.client = client;
         this.myServer = myServer;
-        loginPacket = new LoginRegisterPacket(null,null);
-        message = new Message(null,null,null);
+        loginPacket = new LoginRegisterPacket();
+        message = new Message();
         out = new ObjectOutputStream(client.getOutputStream());
         in = new ObjectInputStream(client.getInputStream());
     }
