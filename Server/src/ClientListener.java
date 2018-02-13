@@ -33,13 +33,7 @@ class ClientListener implements Runnable {
             do {
                 Socket client = serverSocket.accept();
                 myServer.writeToConsole("Connect received from" + client.getInetAddress());
-                /*
-                // pass the client over to the login/register and the control of the server
-                LoginOrRegisterClient login = new LoginOrRegisterClient(client,myServer);
                 
-                Thread nt = new Thread(login);
-                nt.start();
-                */
                 ClientHandler clientHandler = new ClientHandler(client, myServer);
                 new Thread(clientHandler).start();
                 

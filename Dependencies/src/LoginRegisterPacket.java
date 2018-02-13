@@ -6,6 +6,7 @@
 public class LoginRegisterPacket extends Packet{
     private boolean isLogin = false;
     private boolean isRegister = false;
+    private boolean isSuccessful = false;
     private String username;
     private String password;
     
@@ -35,6 +36,14 @@ public class LoginRegisterPacket extends Packet{
     public void setRegisterTrue(){
         isRegister = true;
         isLogin = false;
+    }
+    
+    public boolean isSuccessful(){
+        return isSuccessful;
+    }
+    
+    public void setSuccessful(boolean bool){
+        isSuccessful = bool;
     }
     
     public String getUsername(){

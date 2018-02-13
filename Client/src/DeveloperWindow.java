@@ -54,6 +54,7 @@ public class DeveloperWindow extends Application {
     private ObjectOutputStream out;
     private String comingFrom;
     private String sendingTo;
+    
 
     @Override
     public void start(Stage primaryStage) throws Exception {

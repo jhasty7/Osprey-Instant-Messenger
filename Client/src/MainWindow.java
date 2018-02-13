@@ -69,6 +69,7 @@ public class MainWindow extends Application {
     private Menu fileMenu;
     private MenuItem blockListMenuItem;
     private MenuItem disconnectMenuItem;
+    private MenuItem settingsMenuItem;
     private MenuItem exitMenuItem;
     private Menu optionsMenu;
     private Menu fontMenu;
@@ -110,6 +111,10 @@ public class MainWindow extends Application {
         dummyStringList.add(new Friend("", false, null, ""));
         mySelf = new Friend();
         mySelf = new Friend("butt", true, myStatus, myTextStatus);
+        
+        // establish lasting connection to the server
+        serverListener = new ServerListener(username);
+        new Thread(serverListener).start();
     }
     /*
      * Main GUI window
@@ -155,11 +160,12 @@ public class MainWindow extends Application {
         
         blockListMenuItem = new MenuItem("Block List");
         disconnectMenuItem = new MenuItem("Disconnect");
+        settingsMenuItem = new MenuItem("Settings");
         exitMenuItem = new MenuItem("Exit");
         fileMenu = new Menu("File");
-        fileMenu.getItems().addAll(blockListMenuItem,disconnectMenuItem, exitMenuItem);
+        fileMenu.getItems().addAll(blockListMenuItem,disconnectMenuItem, settingsMenuItem, exitMenuItem);
         //blockListMenuItem.setOnAction();
-
+        
         fontMenu = new Menu("Font");
         fontGroup = new ToggleGroup();
         timesNewRomanRadioMenuItem = new RadioMenuItem("Times New Roman");
@@ -187,9 +193,11 @@ public class MainWindow extends Application {
         disconnectMenuItem.setOnAction(e -> {
             serverListener.disconnect();
             primaryStage.close();
+            // this probably won't work
             Login newLogin = new Login();
             newLogin.start(primaryStage);
         });
+        settingsMenuItem.setOnAction(new SettingsMenuItemActionListener());
         exitMenuItem.setOnAction(e -> {
             exit();
         });
@@ -743,4 +751,16 @@ public class MainWindow extends Application {
         }
         
     }
+    
+    /**
+     * opens up the settings window
+     */
+    private class SettingsMenuItemActionListener implements EventHandler<ActionEvent>{
+        @Override
+        public void handle(ActionEvent event){
+            Settings settings = new Settings();
+            settings.start(new Stage());
+        }
+    }
+    
 }

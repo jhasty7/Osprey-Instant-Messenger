@@ -1,4 +1,5 @@
 
+import java.io.IOException;
 import static java.lang.Character.isLetter;
 import java.util.Optional;
 import javafx.application.Application;
@@ -13,9 +14,12 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import static javafx.scene.control.Alert.AlertType.ERROR;
+import static javafx.scene.control.Alert.AlertType.INFORMATION;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -32,22 +36,25 @@ import javafx.util.Pair;
 
 public class Login extends Application {
 
-    private static GridPane loginPane;
-    private static Pane masterPane;
-    private static TextField username;
-    private static TextField password;
-    private static Stage primaryStage;
-    private static Label usernameLabel;
-    private static Label passwordLabel;
-    private static Button login;
-    private static Button exit;
-    private static Image loginLogoI;
-    private static ImageView loginLogo;
-    private static Button registerButton;
-    private static Alert passwordsDoMatch;
-    private static Alert userAlreadyExistsAlert;
-    private static Alert passwordsDoNotMatch;
-    private static String registrationUserName;
+    private GridPane loginPane;
+    private Pane masterPane;
+    private TextField username;
+    private TextField password;
+    private Stage primaryStage;
+    private Label usernameLabel;
+    private Label passwordLabel;
+    private Button login;
+    private Button exit;
+    private Image loginLogoI;
+    private ImageView loginLogo;
+    private Button registerButton;
+    private CheckBox rememberUsername;
+    private Alert passwordsDoMatch;
+    private Alert userAlreadyExistsAlert;
+    private Alert passwordsDoNotMatch;
+    private String registrationUserName;
+
+    private ServerListener serverListener;
 
     @Override
     public void start(Stage primaryStage) {
@@ -60,11 +67,14 @@ public class Login extends Application {
         username.setPromptText("Click");
         password = new PasswordField();
         password.setPromptText("Password");
-        
+
         usernameLabel = new Label("Username");
         passwordLabel = new Label("Password");
         usernameLabel.getStyleClass().add("outline");
         passwordLabel.getStyleClass().add("outline");
+
+        rememberUsername = new CheckBox("Remember");
+        rememberUsername.setId("cb");
         
         login = new Button("Login");
         exit = new Button("Exit");
@@ -73,8 +83,8 @@ public class Login extends Application {
         loginLogo = new ImageView(loginLogoI);
         this.primaryStage = primaryStage;
         loginLogo.setOpacity(10);
-        //username.setDisable(true);
         login.setDisable(true);
+        
         loginPane.add(usernameLabel, 0, 0);
         loginPane.add(username, 1, 0);
         loginPane.add(passwordLabel, 0, 1);
@@ -82,6 +92,7 @@ public class Login extends Application {
         loginPane.add(login, 2, 0);
         loginPane.add(exit, 2, 1);
         loginPane.add(registerButton, 3, 0);
+        loginPane.add(rememberUsername,0,3);
         loginPane.setAlignment(Pos.CENTER_RIGHT);
 
         /* component listeners */
@@ -109,41 +120,85 @@ public class Login extends Application {
     /* login validation */
     public void attemptToLogin() {
         lockLoginUI(true);
-        
-        if (username.getText() != null && password.getText() != null && !password.getText().matches("^\\s*$")) {
 
-            /* open connection to the server */
-            if (true) {
-                //TODO: send username/password to server to verify login
+        if (!username.getText().equals("") && username.getText() != null && password.getText() != null && !password.getText().matches("^\\s*$")) {
+
+            serverListener = new ServerListener(username.getText());
+            // connect to the server and send login packet
+            try {
+                processLoginOrRegisterResponse(serverListener.loginOrRegister(username.getText(), password.getText(), true));
             }
-            else {
-                /* connection to the server unavailable */
-                loginFailed();
+            catch (IOException ex) {
+                System.err.println("Error: at login class attemptToLogin method");
+                System.err.println(ex);
+                processLoginOrRegisterResponse(2);
             }
 
         }
-        password.clear();
 
     }
 
-    /*
-     * on login success
-     */
-    public static void loginSuccessful() {
+    private void processLoginOrRegisterResponse(int response) {
+        Alert alert;
+        switch (response) {
+            // server sent you gibberish
+            case 0:
+                alert = new Alert(ERROR);
+                alert.setTitle("Hmmm");
+                alert.setHeaderText("Unreadble packet");
+                alert.setContentText("Something got corrupted on its way here");
+                alert.showAndWait();
+                break;
 
-        primaryStage.close();
-        MainWindow mw = new MainWindow(username.getText());
-        mw.start(primaryStage);
+            // login successful
+            case 1:
+                serverListener = null;
+                primaryStage.close();
+                MainWindow mw = new MainWindow(username.getText());
+                mw.start(primaryStage);
+                break;
 
-    }
+            // login failed; username/password not correct
+            case 2:
+                password.clear();
+                username.clear();
+                // god damn wtf did i do
+                new Thread(new SleepForLoginEnable()).start();
+                alert = new Alert(ERROR);
+                alert.setTitle("You suck");
+                alert.setHeaderText("Login didn't work");
+                alert.setContentText("Why? I don't know");
+                alert.showAndWait();
+                break;
 
-    /*
-     * on login failed
-     */
-    public void loginFailed() {
-        lockLoginUI(false);
-        password.clear();
-        login.setDisable(true);
+            // registration succcessful
+            case 3:
+                username.setText(registrationUserName);
+                alert = new Alert(INFORMATION);
+                alert.setTitle("Register Successful");
+                alert.setHeaderText("You did it");
+                alert.setContentText("You can now login");
+                alert.showAndWait();
+                break;
+
+            // registration failed; not sure why
+            case 4:
+                alert = new Alert(ERROR);
+                alert.setTitle("You suck");
+                alert.setHeaderText("Registration failed");
+                alert.setContentText("this really shouldn't fail");
+                alert.showAndWait();
+                break;
+
+            // server didn't send the right packet
+            case 5:
+                alert = new Alert(ERROR);
+                alert.setTitle("Well..");
+                alert.setHeaderText("Server sent a packet you can read");
+                alert.setContentText("it just wasn't the right one");
+                alert.showAndWait();
+                break;
+        }
     }
 
     /*
@@ -180,7 +235,7 @@ public class Login extends Application {
             Dialog<Pair<String, String>> dialog = new Dialog<>();
             dialog.setTitle("Register");
             dialog.setHeaderText("Type in a unique username and complex password");
-            
+
             ButtonType loginButtonType = new ButtonType("Regiser", ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
 
@@ -207,7 +262,7 @@ public class Login extends Application {
 
             Node loginButton = dialog.getDialogPane().lookupButton(loginButtonType);
             loginButton.setDisable(true);
-            
+
             password.textProperty().addListener((observable, oldValue, newValue) -> {
                 loginButton.setDisable(newValue.trim().isEmpty());
             });
@@ -231,7 +286,7 @@ public class Login extends Application {
                 String tempRetypePass;
                 tempPass = usernamePassword.getKey();
                 tempRetypePass = usernamePassword.getValue();
-                if(registrationUserName.equals("")){
+                if (registrationUserName.equals("")) {
                     Alert alert = new Alert(AlertType.ERROR);
                     alert.setHeaderText("No username");
                     alert.setContentText("Enter a username");
@@ -240,7 +295,13 @@ public class Login extends Application {
                     handle(event);
                 }
                 else if (tempPass.equals(tempRetypePass)) {
-                    // TODO: Query database for registration here
+                    serverListener = new ServerListener(registrationUserName);
+                    try {
+                        processLoginOrRegisterResponse(serverListener.loginOrRegister(registrationUserName, tempPass, false));
+                    }
+                    catch (IOException ex) {
+                        processLoginOrRegisterResponse(4);
+                    }
                 }
                 else {
                     Alert alert = new Alert(AlertType.ERROR);
@@ -428,4 +489,20 @@ public class Login extends Application {
         System.exit(0);
     }
 
+    // this is the ugliest thing ive ever done
+    private class SleepForLoginEnable implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(3000);
+                javafx.application.Platform.runLater(() -> {
+                    lockLoginUI(false);
+                });
+            }
+            catch (InterruptedException ex) {
+                System.err.println("Error: in login at SleepForLoginEnable");
+            }
+        }
+    }
 }
