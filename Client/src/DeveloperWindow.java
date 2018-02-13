@@ -27,7 +27,7 @@ public class DeveloperWindow extends Application {
     public static String FRIENDS_NAME = "Michelle";
 
     //javafx ui variables
-    private TextArea textArea;
+    private static TextArea textArea;
     private TextField textField;
 
     private TextField sender;
@@ -46,6 +46,7 @@ public class DeveloperWindow extends Application {
     private Button mainWindowButton;
     private Button messageWindowButton;
     private Button smallGameButton;
+    private Button settingsWindow;
     
     //socket variables/objects
     private Socket myConnection;
@@ -102,7 +103,10 @@ public class DeveloperWindow extends Application {
         
         smallGameButton = new Button("Game");
         smallGameButton.setOnAction(new SmallGameButtonActionListener());
-
+        
+        settingsWindow = new Button("Setting Window");
+        settingsWindow.setOnAction(new SettingsButtonActionListener());
+        
         flowPane.getChildren().add(textArea);
         flowPane.getChildren().add(textField);
         flowPane.getChildren().add(sendMessageButton);
@@ -118,6 +122,7 @@ public class DeveloperWindow extends Application {
         flowPane.getChildren().add(mainWindowButton);
         flowPane.getChildren().add(messageWindowButton);
         flowPane.getChildren().add(smallGameButton);
+        flowPane.getChildren().add(settingsWindow);
         
         primaryStage.setTitle("Developer Window");
         primaryStage.setScene(new Scene(flowPane, 600, 600));
@@ -151,8 +156,6 @@ public class DeveloperWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            //stop the server somehow
-            displayMessage("Not implemented.");
             System.exit(0);
         }
 
@@ -200,7 +203,7 @@ public class DeveloperWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             Login loginWindow = new Login();
-            loginWindow.start(primaryStage);
+            loginWindow.start(new Stage());
         }
         
     }
@@ -210,7 +213,7 @@ public class DeveloperWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             MainWindow mainWindow = new MainWindow(USER_NAME);
-            mainWindow.start(primaryStage);
+            mainWindow.start(new Stage());
         }
         
     }
@@ -220,7 +223,7 @@ public class DeveloperWindow extends Application {
         @Override
         public void handle(ActionEvent event){
             MessageWindow messageWindow = new MessageWindow(FRIENDS_NAME);
-            messageWindow.start(primaryStage);
+            messageWindow.start(new Stage());
         }
     }
     
@@ -229,12 +232,23 @@ public class DeveloperWindow extends Application {
         @Override
         public void handle(ActionEvent event){
             Game game = new Game();
-            game.start(primaryStage);
+            game.start(new Stage());
+        }
+    }
+    
+    private class SettingsButtonActionListener implements EventHandler<ActionEvent>{
+        
+        @Override
+        public void handle(ActionEvent event){
+            Settings settings = new Settings();
+            settings.start(new Stage());
         }
     }
 
-    public void displayMessage(String text) {
-        textArea.appendText(text + "\n");
+    public static void displayMessage(String text) {
+        javafx.application.Platform.runLater(() -> {
+            textArea.appendText(text + "\n");
+        });
     }
     
     

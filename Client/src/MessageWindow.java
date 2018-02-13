@@ -34,7 +34,8 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 public class MessageWindow extends Application {
-
+    
+    private static String logPath = "\\data\\log\\";
     private final String friendName;
     private final TextArea inputTextArea;
     private final Button sendMessageButton;
@@ -271,7 +272,7 @@ public class MessageWindow extends Application {
         String tempStr = "";
 
         try {
-            fileReader = new FileReader(friendName + "-chat-log.txt");
+            fileReader = new FileReader(logPath + friendName + "-chat-log.txt");
             bufferedReader = new BufferedReader(fileReader);
 
             while (bufferedReader.ready()) {
@@ -289,16 +290,16 @@ public class MessageWindow extends Application {
         catch (FileNotFoundException ex) {
 
             try {
-                File logfile = new File(friendName + "-chat-log.txt");
+                File logfile = new File(logPath + friendName + "-chat-log.txt");
                 logfile.createNewFile();
             }
             catch (IOException ex1) {
-                System.out.println("failed to create new log file");
+                DeveloperWindow.displayMessage("failed to create new log file");
             }
 
         }
         catch (IOException ex) {
-            System.out.println("failed to open log file");
+            DeveloperWindow.displayMessage("failed to open log file");
         }
 
     }
@@ -311,18 +312,18 @@ public class MessageWindow extends Application {
 
         PrintWriter printWriter;
         try {
-            printWriter = new PrintWriter((friendName + "-chat-log.txt"), "UTF-8");
+            printWriter = new PrintWriter((logPath + friendName + "-chat-log.txt"), "UTF-8");
             printWriter.write(messageLog.getValue());
             printWriter.close();
             
             primaryStage.close();
         }
         catch (FileNotFoundException ex) {
-            System.out.println("couldn't find log file to write to");
+            DeveloperWindow.displayMessage("couldn't find log file to write to");
 
         }
         catch (IOException ex) {
-            System.out.println("failed to write to log file");
+            DeveloperWindow.displayMessage("failed to write to log file");
         }
 
     }

@@ -44,7 +44,7 @@ public class ServerListener implements Runnable {
 
         }
         catch (IOException | ClassNotFoundException ex) {
-            System.err.println("Error: in ServerListener at run; receiving data");
+            DeveloperWindow.displayMessage("Error: in ServerListener at run; receiving data");
         }
 
     }

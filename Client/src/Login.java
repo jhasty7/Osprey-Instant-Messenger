@@ -129,8 +129,8 @@ public class Login extends Application {
                 processLoginOrRegisterResponse(serverListener.loginOrRegister(username.getText(), password.getText(), true));
             }
             catch (IOException ex) {
-                System.err.println("Error: at login class attemptToLogin method");
-                System.err.println(ex);
+                DeveloperWindow.displayMessage("Error: at login class attemptToLogin method");
+                DeveloperWindow.displayMessage(ex.toString());
                 processLoginOrRegisterResponse(2);
             }
 
@@ -485,8 +485,9 @@ public class Login extends Application {
     }
 
     private void exit() {
-        Platform.exit();
-        System.exit(0);
+        primaryStage.close();
+        //Platform.exit();
+        //System.exit(0);
     }
 
     // this is the ugliest thing ive ever done
@@ -501,7 +502,7 @@ public class Login extends Application {
                 });
             }
             catch (InterruptedException ex) {
-                System.err.println("Error: in login at SleepForLoginEnable");
+                DeveloperWindow.displayMessage("Error: in login at SleepForLoginEnable");
             }
         }
     }

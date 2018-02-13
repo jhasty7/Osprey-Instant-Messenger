@@ -60,6 +60,7 @@ public class MainWindow extends Application {
     private ServerListener serverListener;
 
     // javafx ui variables/objects
+    private Stage primaryStage;
     private FlowPane flowPane;
     private HBox statusHBox;
     private Button availableButton;
@@ -122,7 +123,7 @@ public class MainWindow extends Application {
     @Override
     public void start(Stage primaryStage) {
         flowPane = new FlowPane();
-
+        this.primaryStage = primaryStage;
         /* HBox */
         statusHBox = new HBox();
         statusHBox.prefWidthProperty().bind(flowPane.widthProperty());
@@ -334,8 +335,9 @@ public class MainWindow extends Application {
     private void exit() {
         serverListener.disconnect();
         closeAllWindows();
-        Platform.exit();
-        System.exit(0);
+        primaryStage.close();
+        //Platform.exit();
+        //System.exit(0);
     }
 
     /*
