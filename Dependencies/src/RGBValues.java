@@ -2,9 +2,9 @@
 import java.io.Serializable;
 
 public class RGBValues implements Serializable{
-    double red;
-    double green;
-    double blue;
+    private double red;
+    private double green;
+    private double blue;
     
     public RGBValues (double red, double green, double blue){
         this.red = red;
@@ -12,15 +12,15 @@ public class RGBValues implements Serializable{
         this.blue = blue;
     }
     
-    public double getRed(){
+    public double getR(){
         return red;
     }
     
-    public double getGreen(){
+    public double getG(){
         return green;
     }
     
-    public double getBlue(){
+    public double getB(){
         return blue;
     }
     

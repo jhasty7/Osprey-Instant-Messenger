@@ -4,6 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -134,6 +135,7 @@ public class DeveloperWindow extends Application {
     }
 
     public static void main(String[] args) {
+        Config cfg = new Config();
         Application.launch(args);
     }
 
@@ -156,7 +158,8 @@ public class DeveloperWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            System.exit(0);
+            
+            ExitProgram();
         }
 
     }
@@ -323,6 +326,12 @@ public class DeveloperWindow extends Application {
 
         }
 
+    }
+    
+    public void ExitProgram(){
+        Config.cfg.writeConfigFile();
+        Platform.exit();
+        System.exit(0);
     }
 
 }

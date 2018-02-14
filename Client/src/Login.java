@@ -3,7 +3,6 @@ import java.io.IOException;
 import static java.lang.Character.isLetter;
 import java.util.Optional;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -35,7 +34,8 @@ import javafx.stage.Stage;
 import javafx.util.Pair;
 
 public class Login extends Application {
-
+    
+    
     private GridPane loginPane;
     private Pane masterPane;
     private TextField username;

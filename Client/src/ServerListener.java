@@ -10,8 +10,8 @@ public class ServerListener implements Runnable {
     private ObjectOutputStream out;
     private String username;
     private Socket myClient;
-    private String HOST_NAME = "127.0.0.1";
-    private int PORT_NUMBER = 45566;
+    public static final String HOST_NAME = Config.cfg.getHostname();
+    public static final int PORT_NUMBER = Config.cfg.getPortNumber();
     private boolean isConnected = false;
 
     public ServerListener(String username) {

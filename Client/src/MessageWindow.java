@@ -28,6 +28,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
@@ -35,11 +36,11 @@ import javafx.stage.WindowEvent;
 
 public class MessageWindow extends Application {
     
-    private static String logPath = "\\data\\log\\";
-    private final String friendName;
-    private final TextArea inputTextArea;
-    private final Button sendMessageButton;
-    private final Button closeWindowButton;
+    private static final String LOG_PATH = System.getProperty("user.dir") + "/data/logs/";
+    private String friendName;
+    private TextArea inputTextArea;
+    private Button sendMessageButton;
+    private Button closeWindowButton;
     private Stage primaryStage;
     private StringProperty messageLog = new SimpleStringProperty();
     private MenuBar mainMenuBar;
@@ -50,15 +51,18 @@ public class MessageWindow extends Application {
     private ScrollPane textFlowScrollPane;
     private VBox textFlowVBox;
     private boolean manualScrolling = false;
-
+    
+    private static Color myColor;
+    private static Font myFont;
+    
     public MessageWindow(String friendName) {
-
+        
         this.friendName = friendName;
-        inputTextArea = new TextArea("");
-        sendMessageButton = new Button("Send");
-        closeWindowButton = new Button("Close");
         messageLog.set("");
-
+        myColor = Config.cfg.getColor();
+        myFont = Font.font(Config.cfg.getFontStyle(),Config.cfg.getFontWeightEnum(),
+                Config.cfg.getFontPostureEnum(),Config.cfg.getFontSize());
+        
     }
 
     @Override
@@ -66,6 +70,10 @@ public class MessageWindow extends Application {
         this.primaryStage = primaryStage;
         
         FlowPane pane = new FlowPane();
+        
+        inputTextArea = new TextArea("");
+        sendMessageButton = new Button("Send");
+        closeWindowButton = new Button("Close");
         mainMenuBar = new MenuBar();
         mainMenuBar.prefWidthProperty().bind(pane.widthProperty());
         friendMenuItem = new Menu("Friend");
@@ -123,9 +131,13 @@ public class MessageWindow extends Application {
         primaryStage.setResizable(true);
         primaryStage.setTitle(friendName);
         primaryStage.setScene(scene);
+        
+        // check for logs
+        if(!Config.cfg.isAutoSaveLogs()){
+            checkForLog();
+        }
+        
         primaryStage.show();
-
-        openWindow();
     }
 
     public String getFriendName() {
@@ -169,7 +181,7 @@ public class MessageWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             if (inputTextArea.getText() != null) {
-                removeWindow();
+                closeChatWindow();
             }
         }
 
@@ -231,10 +243,12 @@ public class MessageWindow extends Application {
         String message = textMessage.getComingFrom() + ": " + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
+        
         Text newText = new Text(message);
-        newText.setFill(textMessage.getColor());
-        newText.setFont(textMessage.getFont());
+        newText.setFill(myColor);
+        newText.setFont(myFont);
         textFlow.getChildren().add(newText);
+        
         if (!manualScrolling) {
             textFlowScrollPane.setVvalue(1.0);
         }
@@ -247,7 +261,7 @@ public class MessageWindow extends Application {
 
         @Override
         public void handle(WindowEvent event) {
-            removeWindow();
+            closeChatWindow();
         }
 
     }
@@ -265,14 +279,14 @@ public class MessageWindow extends Application {
     /*
      * gets the text from the log file, if no log file, creates one
      */
-    private void openWindow() {
+    private void checkForLog() {
 
         FileReader fileReader;
         BufferedReader bufferedReader;
         String tempStr = "";
 
         try {
-            fileReader = new FileReader(logPath + friendName + "-chat-log.txt");
+            fileReader = new FileReader(LOG_PATH + friendName + "-chat-log.txt");
             bufferedReader = new BufferedReader(fileReader);
 
             while (bufferedReader.ready()) {
@@ -290,7 +304,7 @@ public class MessageWindow extends Application {
         catch (FileNotFoundException ex) {
 
             try {
-                File logfile = new File(logPath + friendName + "-chat-log.txt");
+                File logfile = new File(LOG_PATH + friendName + "-chat-log.txt");
                 logfile.createNewFile();
             }
             catch (IOException ex1) {
@@ -308,15 +322,13 @@ public class MessageWindow extends Application {
      * writes the chat text to the .txt log
      * TODO: remove from the master window list
      */
-    private void removeWindow() {
+    private void writeToLog() {
 
         PrintWriter printWriter;
         try {
-            printWriter = new PrintWriter((logPath + friendName + "-chat-log.txt"), "UTF-8");
+            printWriter = new PrintWriter((LOG_PATH + friendName + "-chat-log.txt"), "UTF-8");
             printWriter.write(messageLog.getValue());
             printWriter.close();
-            
-            primaryStage.close();
         }
         catch (FileNotFoundException ex) {
             DeveloperWindow.displayMessage("couldn't find log file to write to");
@@ -326,5 +338,24 @@ public class MessageWindow extends Application {
             DeveloperWindow.displayMessage("failed to write to log file");
         }
 
+    }
+    
+    /**
+     * closes chat window
+     */
+    private void closeChatWindow(){
+        writeToLog();
+        primaryStage.close();
+    }
+    
+    /**
+     * Updates color and font when changes somewhere
+     */
+    public static void UpdateConfiguration(){
+        javafx.application.Platform.runLater(() ->{
+            myColor = Config.cfg.getColor();
+            myFont = Font.font(Config.cfg.getFontStyle(),Config.cfg.getFontWeightEnum(),
+                Config.cfg.getFontPostureEnum(),Config.cfg.getFontSize());
+        });
     }
 }

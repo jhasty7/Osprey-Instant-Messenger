@@ -57,7 +57,7 @@ public class Message extends Packet{
     }
     
     public Color getColor(){
-        return new Color(color.getRed(),color.getGreen(),color.getBlue(), 1);
+        return new Color(color.getR(),color.getG(),color.getB(), 1);
     }
     
     public void setColor(Color thisColor){
