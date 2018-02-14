@@ -278,6 +278,7 @@ public class MainWindow extends Application {
      * exiting the program
      */
     private void exit() {
+        Config.cfg.writeConfigFile();
         closeAllWindows();
         serverListener.disconnect();
         primaryStage.close();

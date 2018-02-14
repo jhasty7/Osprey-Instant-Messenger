@@ -3,12 +3,14 @@ import java.io.IOException;
 import static java.lang.Character.isLetter;
 import java.util.Optional;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -21,14 +23,18 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Pair;
@@ -37,14 +43,13 @@ public class Login extends Application {
     
     
     private GridPane loginPane;
-    private Pane masterPane;
+    private BorderPane masterPane;
     private TextField username;
     private TextField password;
     private Stage primaryStage;
     private Label usernameLabel;
     private Label passwordLabel;
     private Button login;
-    private Button exit;
     private Image loginLogoI;
     private ImageView loginLogo;
     private Button registerButton;
@@ -53,7 +58,12 @@ public class Login extends Application {
     private Alert userAlreadyExistsAlert;
     private Alert passwordsDoNotMatch;
     private String registrationUserName;
-
+    private MenuBar mainMenuBar;
+    private Menu optionsMenu;
+    private MenuItem settingsMenuItem;
+    private MenuItem exitMenuItem;
+    private HBox bottomHBox;
+    
     private ServerListener serverListener;
 
     @Override
@@ -61,8 +71,9 @@ public class Login extends Application {
         /*
          * Begin login UI
          */
-        masterPane = new Pane();
+        masterPane = new BorderPane();
         loginPane = new GridPane();
+        bottomHBox = new HBox();
         username = new TextField();
         username.setPromptText("Click");
         password = new PasswordField();
@@ -71,18 +82,26 @@ public class Login extends Application {
         //michelle tryin useless stuff
         loginPane.setPadding(new Insets(10, 10, 10, 10));
         loginPane.setHgap(3);
-        //
-
+        
+        //menu bar
+        mainMenuBar = new MenuBar();
+        mainMenuBar.setId("login-mainmenubar");
+        optionsMenu = new Menu("Options");
+        settingsMenuItem = new MenuItem("Settings");
+        exitMenuItem = new MenuItem("Exit");
+        optionsMenu.getItems().addAll(settingsMenuItem,exitMenuItem);
+        mainMenuBar.getMenus().add(optionsMenu);
+        
+        // other stuff
         usernameLabel = new Label("Username");
         passwordLabel = new Label("Password");
-        usernameLabel.getStyleClass().add("outline");
-        passwordLabel.getStyleClass().add("outline");
+        usernameLabel.setId("login-labels");
+        passwordLabel.setId("login-labels");
 
         rememberUsernamePassword = new CheckBox("Remember");
         rememberUsernamePassword.setId("cb");
         
         login = new Button("Login");
-        exit = new Button("Exit");
         registerButton = new Button("Register");
         loginLogoI = new Image("white_osprey_blue1.jpg");
         loginLogo = new ImageView(loginLogoI);
@@ -90,32 +109,36 @@ public class Login extends Application {
         loginLogo.setOpacity(10);
         login.setDisable(true);
         
+        // bottom hbox
+        bottomHBox.getChildren().add(registerButton);
+        bottomHBox.setAlignment(Pos.BOTTOM_LEFT);
+        bottomHBox.setPadding(new Insets(10, 10, 10, 10));
+        
+        // column, row
         loginPane.add(usernameLabel, 0, 0);
         loginPane.add(username, 1, 0);
         loginPane.add(passwordLabel, 0, 1);
         loginPane.add(password, 1, 1);
         loginPane.add(login, 2, 0);
-        loginPane.add(exit, 2, 1);
-        loginPane.add(registerButton, 3, 0);
-        loginPane.add(rememberUsernamePassword,0,3);
+        loginPane.add(rememberUsernamePassword,1,3);
         loginPane.setAlignment(Pos.CENTER_RIGHT);
-
-        /* component listeners */
-        exit.setOnAction(new ExitButtonListener());
-        primaryStage.setOnCloseRequest(e -> {
-            exit();
-        });
+        
         password.setOnKeyPressed(new PasswordKeyListener());
         login.setOnAction(new LoginButtonListener());
         registerButton.setOnAction(new RegisterButtonListener());
-
-        masterPane.getChildren().addAll(loginLogo, loginPane);
+        
+        masterPane.getChildren().addAll(loginLogo);
+        masterPane.setTop(mainMenuBar);
+        masterPane.setCenter(loginPane);
+        masterPane.setBottom(bottomHBox);
+        loginPane.setAlignment(Pos.TOP_CENTER);
         Scene scene = new Scene(masterPane, 395, 470, Color.BLUE);
         scene.getStylesheets().addAll(getClass().getResource("outline.css").toExternalForm());
-
+        
         primaryStage.getIcons().add(new Image("unf_icon.png"));
         primaryStage.setResizable(false);
         primaryStage.setTitle("UNF Instant Messenger");
+        
         primaryStage.setScene(scene);
         
         primaryStage.show();
@@ -502,21 +525,22 @@ public class Login extends Application {
             username.setDisable(true);
             login.setDisable(true);
             registerButton.setDisable(true);
-            exit.setDisable(true);
+            optionsMenu.setDisable(true);
         }
         else {
             password.setDisable(false);
             username.setDisable(false);
             login.setDisable(false);
             registerButton.setDisable(false);
-            exit.setDisable(false);
+            optionsMenu.setDisable(false);
         }
     }
 
     private void exit() {
+        Config.cfg.writeConfigFile();
         primaryStage.close();
-        //Platform.exit();
-        //System.exit(0);
+        Platform.exit();
+        System.exit(0);
     }
 
     // this is the ugliest thing ive ever done

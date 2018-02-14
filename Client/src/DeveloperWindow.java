@@ -25,29 +25,15 @@ public class DeveloperWindow extends Application {
 
     //javafx ui variables
     private static TextArea textArea;
-    private TextField textField;
-
     private FlowPane flowPane;
-    private Button quitButton;
     private Button loginWindowButton;
-    private Stage primaryStage;
     private Button mainWindowButton;
     private Button messageWindowButton;
     private Button smallGameButton;
     private Button settingsWindow;
-    
-    //socket variables/objects
-    private Socket myConnection;
-    private boolean isConnected = false;
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
-    private String comingFrom;
-    private String sendingTo;
-    
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.primaryStage = primaryStage;
         
         flowPane = new FlowPane();
         flowPane.prefWidthProperty().bind(primaryStage.widthProperty());
@@ -57,12 +43,6 @@ public class DeveloperWindow extends Application {
         textArea.prefWidthProperty().bind(flowPane.widthProperty());
         textArea.setPrefHeight(500);
         textArea.setEditable(false);
-
-        textField = new TextField();
-        textField.prefWidthProperty().bind(flowPane.widthProperty());
-
-        quitButton = new Button("Exit");
-        quitButton.setOnAction(new ExitButtonActionListener());
         
         loginWindowButton = new Button("Login Window");
         loginWindowButton.setOnAction(new OpenLoginWindowActionListener());
@@ -80,8 +60,6 @@ public class DeveloperWindow extends Application {
         settingsWindow.setOnAction(new SettingsButtonActionListener());
         
         flowPane.getChildren().add(textArea);
-        flowPane.getChildren().add(textField);
-        flowPane.getChildren().add(quitButton);
         flowPane.getChildren().add(loginWindowButton);
         flowPane.getChildren().add(mainWindowButton);
         flowPane.getChildren().add(messageWindowButton);
@@ -100,16 +78,6 @@ public class DeveloperWindow extends Application {
     public static void main(String[] args) {
         Config cfg = new Config();
         Application.launch(args);
-    }
-
-    private class ExitButtonActionListener implements EventHandler<ActionEvent> {
-
-        @Override
-        public void handle(ActionEvent event) {
-            
-            ExitProgram();
-        }
-
     }
 
     
@@ -164,12 +132,6 @@ public class DeveloperWindow extends Application {
         javafx.application.Platform.runLater(() -> {
             textArea.appendText(text + "\n");
         });
-    }
-    
-    public void ExitProgram(){
-        Config.cfg.writeConfigFile();
-        Platform.exit();
-        System.exit(0);
     }
 
 }
