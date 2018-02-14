@@ -33,6 +33,11 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javax.imageio.ImageIO;
 
 public class MessageWindow extends Application {
     
@@ -41,6 +46,7 @@ public class MessageWindow extends Application {
     private TextArea inputTextArea;
     private Button sendMessageButton;
     private Button closeWindowButton;
+    private Button sendImageButton;
     private Stage primaryStage;
     private StringProperty messageLog = new SimpleStringProperty();
     private MenuBar mainMenuBar;
@@ -84,6 +90,7 @@ public class MessageWindow extends Application {
         inputTextArea = new TextArea("");
         sendMessageButton = new Button("Send");
         closeWindowButton = new Button("Close");
+        sendImageButton = new Button("Image");
         textFlow = new TextFlow();
         textFlowScrollPane = new ScrollPane();
         textFlowVBox = new VBox();
@@ -102,6 +109,7 @@ public class MessageWindow extends Application {
         sendMessageButton.setOnAction(new SendButtonActionListener());
         inputTextArea.setOnKeyPressed(new InputTextAreaKeyListener());
         closeWindowButton.setOnAction(new CloseWindowButtonListener());
+        sendImageButton.setOnAction(new AttatchImageListener());
         primaryStage.heightProperty().addListener(p -> {
             textFlowVBox.setPrefHeight(primaryStage.getHeight() - 200);
         });
@@ -117,7 +125,9 @@ public class MessageWindow extends Application {
         pane.getChildren().add(textFlowVBox);
         pane.getChildren().add(inputTextArea);
         pane.getChildren().add(sendMessageButton);
+        pane.getChildren().add(sendImageButton);
         pane.getChildren().add(closeWindowButton);
+        
         Scene scene = new Scene(pane, 350, 350);
         
         primaryStage.setOnCloseRequest(new clickedXToClose());
@@ -181,6 +191,19 @@ public class MessageWindow extends Application {
         }
 
     }
+    //More dumb Michelle stuff
+    class AttatchImageListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            if (inputTextArea.getText() != null) {
+                
+                attatchImage();
+            }
+        }
+
+    }
+    //
 
     /*
      * when the enter button is pressed while the input text area has focus
@@ -280,6 +303,30 @@ public class MessageWindow extends Application {
         //TODO: send the packet out to the server
         
     }
+    
+    //Michelle does more stupid stuff
+    private void attatchImage(){
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        fileChooser.getExtensionFilters().addAll(new ExtensionFilter("JPGs", "*.JPG"));
+        File file = fileChooser.showOpenDialog(null);
+        if(file != null){
+            Image image = new Image(file.toURI().toString());
+            sendImage(image);
+        }
+    }
+    private void sendImage(Image file){     
+        
+        ImageView imageView = new ImageView(file);
+        imageView.setFitHeight(100);
+        imageView.setFitWidth(100);
+        imageView.setPreserveRatio(true);
+        textFlow.getChildren().add(new Text("\n"));
+        textFlow.getChildren().add(imageView);
+        textFlow.getChildren().add(new Text("\n"));
+        
+    }
+    //
 
     /*
      * gets the text from the log file, if no log file, creates one

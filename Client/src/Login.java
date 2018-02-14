@@ -67,6 +67,11 @@ public class Login extends Application {
         username.setPromptText("Click");
         password = new PasswordField();
         password.setPromptText("Password");
+        
+        //michelle tryin useless stuff
+        loginPane.setPadding(new Insets(10, 10, 10, 10));
+        loginPane.setHgap(3);
+        //
 
         usernameLabel = new Label("Username");
         passwordLabel = new Label("Password");
@@ -79,7 +84,7 @@ public class Login extends Application {
         login = new Button("Login");
         exit = new Button("Exit");
         registerButton = new Button("Register");
-        loginLogoI = new Image("white_osprey_blue.jpg");
+        loginLogoI = new Image("white_osprey_blue1.jpg");
         loginLogo = new ImageView(loginLogoI);
         this.primaryStage = primaryStage;
         loginLogo.setOpacity(10);
