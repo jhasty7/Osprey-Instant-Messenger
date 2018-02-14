@@ -215,7 +215,7 @@ public class DeveloperWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            MainWindow mainWindow = new MainWindow(USER_NAME);
+            MainWindow mainWindow = new MainWindow();
             mainWindow.start(new Stage());
         }
         

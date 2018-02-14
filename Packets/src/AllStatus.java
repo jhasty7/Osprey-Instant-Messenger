@@ -1,28 +1,28 @@
 
-public class Status extends Packet {
+public class AllStatus extends Packet {
 
-    private ONLINE_STATUS onlineStatus;
-    private USER_STATUS userStatus;
+    private eONLINE_STATUS onlineStatus;
+    private eCURRENT_STATUS userStatus;
     private String statusText;
 
-    Status() {
+    AllStatus() {
         onlineStatus = null;
         userStatus = null;
         statusText = null;
     }
 
-    Status(ONLINE_STATUS onlineStatus, USER_STATUS userStatus, String statusText) {
+    AllStatus(eONLINE_STATUS onlineStatus, eCURRENT_STATUS userStatus, String statusText) {
 
         this.onlineStatus = onlineStatus;
         this.userStatus = userStatus;
         this.statusText = statusText;
     }
 
-    public ONLINE_STATUS getOnlineStatus() {
+    public eONLINE_STATUS getOnlineStatus() {
         return onlineStatus;
     }
 
-    public USER_STATUS getUserStatus() {
+    public eCURRENT_STATUS getUserStatus() {
         return userStatus;
     }
 

@@ -59,9 +59,6 @@ public class MessageWindow extends Application {
         
         this.friendName = friendName;
         messageLog.set("");
-        myColor = Config.cfg.getColor();
-        myFont = Font.font(Config.cfg.getFontStyle(),Config.cfg.getFontWeightEnum(),
-                Config.cfg.getFontPostureEnum(),Config.cfg.getFontSize());
         
     }
 
@@ -69,23 +66,24 @@ public class MessageWindow extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         
+        // main pain
         FlowPane pane = new FlowPane();
         
-        inputTextArea = new TextArea("");
-        sendMessageButton = new Button("Send");
-        closeWindowButton = new Button("Close");
+        // menu bar and items
         mainMenuBar = new MenuBar();
         mainMenuBar.prefWidthProperty().bind(pane.widthProperty());
         friendMenuItem = new Menu("Friend");
-
         ignoreTextMenuItem = new CheckMenuItem("Ignore Font/Color");
         blockFriendMenuItem = new MenuItem("Block");
         blockFriendMenuItem.setOnAction(new BlockFriendMenuItemListener());
-
         friendMenuItem.getItems().addAll(ignoreTextMenuItem,
                 blockFriendMenuItem);
         mainMenuBar.getMenus().add(friendMenuItem);
-
+        
+        // text areas and buttons
+        inputTextArea = new TextArea("");
+        sendMessageButton = new Button("Send");
+        closeWindowButton = new Button("Close");
         textFlow = new TextFlow();
         textFlowScrollPane = new ScrollPane();
         textFlowVBox = new VBox();
@@ -95,8 +93,6 @@ public class MessageWindow extends Application {
         textFlowScrollPane.vvalueProperty().addListener(new TextFlowScrollPaneVerticalPropertyListener());
         textFlowVBox.setMinSize(350, 200);
         textFlowVBox.prefWidthProperty().bind(pane.widthProperty());
-        
-
         inputTextArea.setMinSize(180, 110);
         inputTextArea.setMaxSize(180, 110);
         inputTextArea.setWrapText(true);
@@ -106,18 +102,6 @@ public class MessageWindow extends Application {
         sendMessageButton.setOnAction(new SendButtonActionListener());
         inputTextArea.setOnKeyPressed(new InputTextAreaKeyListener());
         closeWindowButton.setOnAction(new CloseWindowButtonListener());
-
-        pane.setPrefSize(350.0, 350.0);
-        pane.setVgap(5);
-        pane.setHgap(12);
-
-        pane.getChildren().add(mainMenuBar);
-        pane.getChildren().add(textFlowVBox);
-        pane.getChildren().add(inputTextArea);
-        pane.getChildren().add(sendMessageButton);
-        pane.getChildren().add(closeWindowButton);
-        Scene scene = new Scene(pane, 350, 350);
-
         primaryStage.heightProperty().addListener(p -> {
             textFlowVBox.setPrefHeight(primaryStage.getHeight() - 200);
         });
@@ -125,6 +109,17 @@ public class MessageWindow extends Application {
             inputTextArea.setMaxWidth(primaryStage.getWidth() - 220);
             inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
         });
+        
+        pane.setPrefSize(350.0, 350.0);
+        pane.setVgap(5);
+        pane.setHgap(12);
+        pane.getChildren().add(mainMenuBar);
+        pane.getChildren().add(textFlowVBox);
+        pane.getChildren().add(inputTextArea);
+        pane.getChildren().add(sendMessageButton);
+        pane.getChildren().add(closeWindowButton);
+        Scene scene = new Scene(pane, 350, 350);
+        
         primaryStage.setOnCloseRequest(new clickedXToClose());
         primaryStage.setMinWidth(395);
         primaryStage.setMinHeight(390);
@@ -133,7 +128,7 @@ public class MessageWindow extends Application {
         primaryStage.setScene(scene);
         
         // check for logs
-        if(!Config.cfg.isAutoSaveLogs()){
+        if(Config.cfg.isAutoSaveLogs()){
             checkForLog();
         }
         
@@ -229,9 +224,12 @@ public class MessageWindow extends Application {
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
         Text newText = new Text(message);
-        if (!ignoreTextMenuItem.isSelected()) {
+        if (Config.cfg.isIgnoreFriendTextStyle()) {
+            newText.setFill(Config.cfg.getColor());
+            newText.setFont(Config.cfg.getFontAsFont());
+        } else{
+            newText.setFont(textMessage.getFontAsFont());
             newText.setFill(textMessage.getColor());
-            newText.setFont(textMessage.getFont());
         }
         textFlow.getChildren().add(newText);
         if (!manualScrolling) {
@@ -240,18 +238,19 @@ public class MessageWindow extends Application {
     }
     
     void displayMyText(Message textMessage){
+        
         String message = textMessage.getComingFrom() + ": " + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
-        
         Text newText = new Text(message);
-        newText.setFill(myColor);
-        newText.setFont(myFont);
+        newText.setFill(textMessage.getColor());
+        newText.setFont(textMessage.getFontAsFont());
         textFlow.getChildren().add(newText);
         
         if (!manualScrolling) {
             textFlowScrollPane.setVvalue(1.0);
         }
+        
     }
 
     /*
@@ -271,9 +270,15 @@ public class MessageWindow extends Application {
      */
     private void sendMessage(String message) {
         // create Message object and display it locally, then send it to the server
-        Message textMessage = new Message(DeveloperWindow.USER_NAME,friendName,message,Font.font("Regular",12),Color.BLACK);
+        Message textMessage = new Message(
+                DeveloperWindow.USER_NAME,
+                friendName,
+                message,
+                Config.cfg.getFontAsFontValue(),
+                Config.cfg.getColor());
         displayMyText(textMessage);
         //TODO: send the packet out to the server
+        
     }
 
     /*
@@ -305,6 +310,7 @@ public class MessageWindow extends Application {
 
             try {
                 File logfile = new File(LOG_PATH + friendName + "-chat-log.txt");
+                logfile.getParentFile().mkdirs();
                 logfile.createNewFile();
             }
             catch (IOException ex1) {
@@ -344,18 +350,10 @@ public class MessageWindow extends Application {
      * closes chat window
      */
     private void closeChatWindow(){
-        writeToLog();
+        if(Config.cfg.isAutoSaveLogs()){
+            writeToLog();
+        }
         primaryStage.close();
     }
     
-    /**
-     * Updates color and font when changes somewhere
-     */
-    public static void UpdateConfiguration(){
-        javafx.application.Platform.runLater(() ->{
-            myColor = Config.cfg.getColor();
-            myFont = Font.font(Config.cfg.getFontStyle(),Config.cfg.getFontWeightEnum(),
-                Config.cfg.getFontPostureEnum(),Config.cfg.getFontSize());
-        });
-    }
 }

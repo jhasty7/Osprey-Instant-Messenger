@@ -3,19 +3,19 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServerListener implements Runnable {
 
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private String username;
     private Socket myClient;
     public static final String HOST_NAME = Config.cfg.getHostname();
     public static final int PORT_NUMBER = Config.cfg.getPortNumber();
     private boolean isConnected = false;
 
-    public ServerListener(String username) {
-        this.username = username;
+    public ServerListener() {
         myClient = null;
         in = null;
         out = null;
@@ -32,13 +32,16 @@ public class ServerListener implements Runnable {
             isConnected = true;
 
             //send connectingPacket to let the server you are connecting longterm
-            out.writeObject(new ConnectingPacket(username));
+            out.writeObject(new Connecting(Config.cfg.getUsername()));
 
             //after this will just wait for new packets from the server
             do {
                 Object obj;
                 obj = in.readObject();
-                // deciefer the object
+
+                if (obj.getClass().equals(Message.class)) {
+
+                }
 
             } while (isConnected);
 
@@ -54,11 +57,74 @@ public class ServerListener implements Runnable {
         return false;
     }
 
-    public boolean connect() {
+    /**
+     * begin outgoing packets
+     *
+     */
+    public void blockFriend(String friendName) {
 
-        return false;
+        try {
+            out.writeObject(new BlockFriend(friendName));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending blockFriend packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
     }
 
+    public void addFriend(String friendName) {
+        try {
+            out.writeObject(new AddFriend(friendName));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending AddFriend packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    public void updateTextStatus(String statusText) {
+        try {
+            out.writeObject(new TextStatus(statusText));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending TextStatus packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    public void updateCurrentStatus(eCURRENT_STATUS currentStatus) {
+        try {
+            out.writeObject(new CurrentStatus(currentStatus));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending CurrentStatus packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    public void updateOnlineStatus(eONLINE_STATUS onlineStatus) {
+        try {
+            out.writeObject(new OnlineStatus(onlineStatus));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending OnlineStatus packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    public void removeFriend(String friendName) {
+        try {
+            out.writeObject(new RemoveFriend(friendName));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: RemoveFriend packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    /**
+     * end outgoing packets
+     */
     /**
      * this method creates a temporary connection to the server to attempt to
      * login. after the login is validated, the connection will be closed, then
@@ -132,27 +198,6 @@ public class ServerListener implements Runnable {
         in.close();
         out.close();
         return loginOrRegisterResponse;
-
-    }
-
-    // outgoing message *** spawn a new thread to handle these (or maybe not i dunno)
-    public void blockFriend(String friendName) {
-
-    }
-
-    public void addFriend(String friendName) {
-
-    }
-
-    public void updateStatusText(String statusText) {
-
-    }
-
-    public void updateUserStatus(USER_STATUS currentStatus) {
-
-    }
-
-    public void removeFriend(String friendName) {
 
     }
 

@@ -48,7 +48,7 @@ public class Login extends Application {
     private Image loginLogoI;
     private ImageView loginLogo;
     private Button registerButton;
-    private CheckBox rememberUsername;
+    private CheckBox rememberUsernamePassword;
     private Alert passwordsDoMatch;
     private Alert userAlreadyExistsAlert;
     private Alert passwordsDoNotMatch;
@@ -73,8 +73,8 @@ public class Login extends Application {
         usernameLabel.getStyleClass().add("outline");
         passwordLabel.getStyleClass().add("outline");
 
-        rememberUsername = new CheckBox("Remember");
-        rememberUsername.setId("cb");
+        rememberUsernamePassword = new CheckBox("Remember");
+        rememberUsernamePassword.setId("cb");
         
         login = new Button("Login");
         exit = new Button("Exit");
@@ -92,7 +92,7 @@ public class Login extends Application {
         loginPane.add(login, 2, 0);
         loginPane.add(exit, 2, 1);
         loginPane.add(registerButton, 3, 0);
-        loginPane.add(rememberUsername,0,3);
+        loginPane.add(rememberUsernamePassword,0,3);
         loginPane.setAlignment(Pos.CENTER_RIGHT);
 
         /* component listeners */
@@ -112,18 +112,33 @@ public class Login extends Application {
         primaryStage.setResizable(false);
         primaryStage.setTitle("UNF Instant Messenger");
         primaryStage.setScene(scene);
+        
         primaryStage.show();
-
         login.requestFocus();
+        
+        applyConfiguration();
+    }
+    
+    private void applyConfiguration(){
+        rememberUsernamePassword.setSelected(Config.cfg.isRememberUsernamePassword());
+        if(rememberUsernamePassword.isSelected()){
+            if(Config.cfg.getUsername() != null && Config.cfg.getPassword() != null){
+                username.setText(Config.cfg.getUsername());
+                password.setText(Config.cfg.getPassword());
+                if(Config.cfg.isAutoLogin()){
+                    attemptToLogin();
+                }
+            }
+        }
     }
 
     /* login validation */
-    public void attemptToLogin() {
+    private void attemptToLogin() {
         lockLoginUI(true);
 
         if (!username.getText().equals("") && username.getText() != null && password.getText() != null && !password.getText().matches("^\\s*$")) {
 
-            serverListener = new ServerListener(username.getText());
+            serverListener = new ServerListener();
             // connect to the server and send login packet
             try {
                 processLoginOrRegisterResponse(serverListener.loginOrRegister(username.getText(), password.getText(), true));
@@ -152,9 +167,12 @@ public class Login extends Application {
 
             // login successful
             case 1:
+                Config.cfg.setRememberUsernamePassword(rememberUsernamePassword.isSelected());
+                Config.cfg.setUsername(username.getText());
+                Config.cfg.setPassword(password.getText());
                 serverListener = null;
                 primaryStage.close();
-                MainWindow mw = new MainWindow(username.getText());
+                MainWindow mw = new MainWindow();
                 mw.start(primaryStage);
                 break;
 
@@ -162,6 +180,12 @@ public class Login extends Application {
             case 2:
                 password.clear();
                 username.clear();
+                
+                // this checks if the user just newly clicked "Remember" and failed the login.
+                // it unchecks remember.
+                if(!Config.cfg.isRememberUsernamePassword() && rememberUsernamePassword.isSelected()){
+                    rememberUsernamePassword.setSelected(false);
+                }
                 // god damn wtf did i do
                 new Thread(new SleepForLoginEnable()).start();
                 alert = new Alert(ERROR);
@@ -204,7 +228,7 @@ public class Login extends Application {
     /*
      * clicking the register button
      */
-    class RegisterButtonListener implements EventHandler<ActionEvent> {
+    private class RegisterButtonListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -295,7 +319,7 @@ public class Login extends Application {
                     handle(event);
                 }
                 else if (tempPass.equals(tempRetypePass)) {
-                    serverListener = new ServerListener(registrationUserName);
+                    serverListener = new ServerListener();
                     try {
                         processLoginOrRegisterResponse(serverListener.loginOrRegister(registrationUserName, tempPass, false));
                     }
@@ -424,7 +448,7 @@ public class Login extends Application {
     /*
      * clicking the login button
      */
-    class LoginButtonListener implements EventHandler<ActionEvent> {
+    private class LoginButtonListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -436,7 +460,7 @@ public class Login extends Application {
     /*
      * clicking the exit button
      */
-    class ExitButtonListener implements EventHandler<ActionEvent> {
+    private class ExitButtonListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -448,7 +472,7 @@ public class Login extends Application {
     /*
      * pressing enter while password text field is focused
      */
-    class PasswordKeyListener implements EventHandler<KeyEvent> {
+    private class PasswordKeyListener implements EventHandler<KeyEvent> {
 
         @Override
         public void handle(KeyEvent event) {
@@ -467,7 +491,7 @@ public class Login extends Application {
     }
 
     /* locks and unlocks sensitive UI components */
-    public void lockLoginUI(boolean lock) {
+    private void lockLoginUI(boolean lock) {
         if (lock) {
             password.setDisable(true);
             username.setDisable(true);

@@ -1,4 +1,4 @@
 
-    public enum USER_STATUS {
+    public enum eCURRENT_STATUS {
         available, away, busy;
     }

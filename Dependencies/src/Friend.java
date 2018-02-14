@@ -1,54 +1,69 @@
 
+import java.io.Serializable;
 
-public class Friend extends Packet {
+public class Friend implements Serializable{
 
-    private String userName;
-    private boolean online;
-    private USER_STATUS userStatus;
-    private String statusText;
+    private String username;
+    private boolean onlineStatus;
+    private eCURRENT_STATUS currentStatus;
+    private String textStatus;
     
     public Friend(){
-        userName = null;
-        online = false;
+        username = null;
+        onlineStatus = false;
+        currentStatus = null;
+        textStatus = null;
     }
     
-    public Friend(String userName, boolean online,USER_STATUS userStatus,String statusText){
-        this.userName = userName;
-        this.online = online;
-        this.userStatus = userStatus;
-        this.statusText = statusText;
+    public Friend(String userName, boolean onlineStatus,eCURRENT_STATUS currentStatus,String textStatus){
+        this.username = userName;
+        this.onlineStatus = onlineStatus;
+        this.currentStatus = currentStatus;
+        this.textStatus = textStatus;
     }
     
-    public String getUserName(){
-        return userName;
+    public String getUsername(){
+        return username;
     }
     
     public boolean getOnlineStatus(){
-        return online;
+        return onlineStatus;
     }
     
-    public USER_STATUS getUserStatus(){
-        return userStatus;
+    public eCURRENT_STATUS getCurrentStatus(){
+        return currentStatus;
     }
     
-    public String getStatusText(){
-        return statusText;
+    public eONLINE_STATUS getOnlineStatusAsEnum(){
+        if(onlineStatus){
+            return eONLINE_STATUS.online;
+        }else{
+            return eONLINE_STATUS.offline;
+        }
     }
     
-    public void setUserStats(USER_STATUS userStatus){
-        this.userStatus = userStatus;
+    public String setTextStatus(){
+        return textStatus;
     }
     
-    public void setStatusString(String statusText){
-        this.statusText = statusText;
+    public void setCurrentStatus(eCURRENT_STATUS currentStatus){
+        this.currentStatus = currentStatus;
     }
     
-    public void setOnline(boolean onlineStatus){
-        this.online = onlineStatus;
+    public void setTextStatus(String textStatus){
+        this.textStatus = textStatus;
+    }
+    
+    public void setOnlineStatus(boolean onlineStatus){
+        this.onlineStatus = onlineStatus;
+    }
+    
+    public void setUsername(String username){
+        this.username = username;
     }
     
     @Override
     public String toString(){
-        return userName + "," + online + "," + userStatus + "," + statusText;
+        return username + "," + onlineStatus + "," + currentStatus + "," + textStatus;
     }
 }

@@ -1,13 +1,13 @@
 
-public class ConnectingPacket extends Packet{
+public class Connecting extends Packet{
     
     private String username;
     
-    public ConnectingPacket(){
+    public Connecting(){
         this.username = null;
     }
     
-    public ConnectingPacket(String username){
+    public Connecting(String username){
         this.username = username;
     }
     

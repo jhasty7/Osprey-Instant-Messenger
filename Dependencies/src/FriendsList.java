@@ -62,12 +62,12 @@ public class FriendsList implements Serializable {
         ArrayList<String> tempList = new ArrayList<>();
 
         if (!onlineFriends.isEmpty()
-                && !onlineFriends.get(0).getUserName().equals("")) {
+                && !onlineFriends.get(0).getUsername().equals("")) {
 
             int i;
             for (i = 0; i < onlineFriends.size(); i++) {
-                tempList.add(onlineFriends.get(i).getUserName() + " - "
-                        + onlineFriends.get(i).getUserStatus() + " - " + onlineFriends.get(i).getStatusText());
+                tempList.add(onlineFriends.get(i).getUsername() + " - "
+                        + onlineFriends.get(i).getCurrentStatus() + " - " + onlineFriends.get(i).setTextStatus());
             }
 
             return tempList;
@@ -81,11 +81,11 @@ public class FriendsList implements Serializable {
     public ArrayList<String> getOfflineFriendsAsString() {
         ArrayList<String> tempList = new ArrayList<>();
         if (!offlineFriends.isEmpty()
-                && !offlineFriends.get(0).getUserName().equals("")) {
+                && !offlineFriends.get(0).getUsername().equals("")) {
 
             int i;
             for (i = 0; i < offlineFriends.size(); i++) {
-                tempList.add(offlineFriends.get(i).getUserName());
+                tempList.add(offlineFriends.get(i).getUsername());
             }
 
             return tempList;
@@ -103,9 +103,9 @@ public class FriendsList implements Serializable {
 
             int i;
             for (i = 0; i < offlineFriends.size(); i++) {
-                if (friend.getUserName().equals(offlineFriends.get(i).getUserName())) {
+                if (friend.getUsername().equals(offlineFriends.get(i).getUsername())) {
                     offlineFriends.remove(i);
-                    if (onlineFriends.get(0).getUserName().equals("")) {
+                    if (onlineFriends.get(0).getUsername().equals("")) {
                         onlineFriends.remove(0);
                     }
                     onlineFriends.add(friend);
@@ -118,9 +118,9 @@ public class FriendsList implements Serializable {
         else {
             int i;
             for (i = 0; i < onlineFriends.size(); i++) {
-                if (friend.getUserName().equals(onlineFriends.get(i).getUserName())) {
+                if (friend.getUsername().equals(onlineFriends.get(i).getUsername())) {
                     onlineFriends.remove(i);
-                    if (offlineFriends.get(0).getUserName().equals("")) {
+                    if (offlineFriends.get(0).getUsername().equals("")) {
                         offlineFriends.remove(0);
                     }
                     offlineFriends.add(friend);
@@ -135,13 +135,13 @@ public class FriendsList implements Serializable {
     /* adding friend */
     public void addFriend(Friend friend) {
         if (friend.getOnlineStatus()) {
-            if (onlineFriends.get(0).getUserName().equals("")) {
+            if (onlineFriends.get(0).getUsername().equals("")) {
                 onlineFriends.remove(0);
             }
             onlineFriends.add(friend);
         }
         else {
-            if (offlineFriends.get(0).getUserName().equals("")) {
+            if (offlineFriends.get(0).getUsername().equals("")) {
                 offlineFriends.remove(0);
             }
             offlineFriends.add(friend);
@@ -153,7 +153,7 @@ public class FriendsList implements Serializable {
         /* check online */
         int i;
         for (i = 0; i < onlineFriends.size(); i++) {
-            if (friend.equals(onlineFriends.get(i).getUserName())) {
+            if (friend.equals(onlineFriends.get(i).getUsername())) {
                 onlineFriends.remove(i);
             }
         }
@@ -162,7 +162,7 @@ public class FriendsList implements Serializable {
         }
         /* check offline */
         for (i = 0; i < offlineFriends.size(); i++) {
-            if (friend.equals(offlineFriends.get(i).getUserName())) {
+            if (friend.equals(offlineFriends.get(i).getUsername())) {
                 offlineFriends.remove(i);
             }
         }

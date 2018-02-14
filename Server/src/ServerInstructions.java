@@ -5,15 +5,24 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class ServerInstructions {
 
+    // most likely the database will remain on the same machine as the server
+    // but, if it doesn't the url is changed here,
+    // and you can not use 'root' for the mySql login. 'root' is reserved for local machine only.
     private static final String DB_NAME = "jdbc:mysql://127.0.0.1:3306/unf_im_database";
     private static final String DB_USERNAME = "root";
     private static final String DB_PASSWORD = "l83r6q4E$8io";
 
     private Connection myConnection = null;
-
+    private Server myServer;
+    
+    public ServerInstructions(Server myServer){
+        this.myServer = myServer;
+    }
+    
     public boolean login(String username, String password) {
         boolean isSuccessful = false;
         // perform login with database (check username/password)
@@ -30,7 +39,7 @@ public class ServerInstructions {
             System.err.println("Error: in ServerInstruction at login method");
             System.out.println(ex);
         }
-        //if false
+        
         return isSuccessful;
     }
 
@@ -45,6 +54,153 @@ public class ServerInstructions {
     public boolean register(String username, String password) {
         String sqlString = processSQLString(SQL_CALLS.Register, null , null, null);
         return ExecuteDatabaseRegisterStoredProcedure(sqlString, username, password);
+    }
+    
+    /**
+     * This will add friend to sql table
+     * @param username
+     * @param friendName
+     * @return 
+     */
+    public boolean addFriend(String username, String friendName){
+        boolean isSuccessful = false;
+        
+        
+        return isSuccessful;
+    }
+    
+    /**
+     * This is remove friend from sql table
+     * @param username
+     * @param friendName
+     * @return 
+     */
+    public boolean removeFriend(String username, String friendName){
+        boolean isSuccessful = false;
+        
+        
+        return isSuccessful;
+    }
+    
+    /**
+     * this will update user status in user_credentials table
+     * @param username
+     * @param textStatus
+     * @return 
+     */
+    public boolean setTextStatus(String username, String textStatus){
+        boolean isSuccessful = false;
+        
+        
+        return isSuccessful;
+    }
+    
+    /**
+     * this will update online status in user_credentials table
+     * @param username
+     * @param onlineStatus
+     * @return 
+     */
+    public boolean setOnlineStatus(String username, eONLINE_STATUS onlineStatus){
+        boolean isSuccessful = false;
+        
+        
+        return isSuccessful;
+    }
+    
+    /**
+     * this will update current status in user_credentials table
+     * @param username
+     * @param currentStatus
+     * @return 
+     */
+    public boolean setCurrentStatus(String username, eCURRENT_STATUS currentStatus){
+        boolean isSuccessful = false;
+        
+        
+        return isSuccessful;
+    }
+    
+    /**
+     * this will get the clients info as a friend and return it
+     * @param username
+     * @return 
+     */
+    public Friend retrieveClientAsFriend(String username){
+        Friend tempFriend = null;
+        
+        String sqlString = processSQLString(SQL_CALLS.GetClientAsFriend, username, null, null);
+        ResultSet rs = ExecuteQueryDatabase(sqlString);
+        try {
+            while (rs.next()) {
+                tempFriend = new Friend(
+                        rs.getString(1),
+                        Boolean.parseBoolean(rs.getString(2)),
+                        eCURRENT_STATUS.valueOf(rs.getString(3)),
+                        rs.getString(4));
+            }
+        }
+        catch (SQLException e) {
+            myServer.writeToConsole("Error generating friends list for " + username + "\n");
+        }
+        return tempFriend;
+    }
+    
+    /**
+     * Retrieve clients friends list from the database
+     * @param username
+     * @return 
+     */
+    public FriendsList retrieveFriendsList(String username){
+        
+        ArrayList<Friend> tempFriendList = new ArrayList<>();
+        
+        String sqlString = processSQLString(SQL_CALLS.GetFriendsList, username, null, null);
+        ResultSet rs = ExecuteQueryDatabase(sqlString);
+        
+        try {
+            
+            while (rs.next()) {
+                tempFriendList.add(new Friend(
+                        rs.getString(1),
+                        Boolean.parseBoolean(rs.getString(2)),
+                        eCURRENT_STATUS.valueOf(rs.getString(3)),
+                        rs.getString(4)));
+            }
+            
+            return new FriendsList(tempFriendList);
+        }
+        catch (SQLException e) {
+            myServer.writeToConsole("Error generating friends list for " + username + "\n");
+        }
+        return new FriendsList();
+    }
+    
+    /**
+     * retrieve only the only the users online friends from the database
+     * @param username
+     * @return 
+     */
+    public ArrayList<Friend> retrieveOnlyOnlineFriends(String username){
+        ArrayList<Friend> tempFriendList = new ArrayList<>();
+        
+        String sqlString = processSQLString(SQL_CALLS.GetOnlyOnlineFriends, username, null, null);
+        ResultSet rs = ExecuteQueryDatabase(sqlString);
+        
+        try {
+            
+            while (rs.next()) {
+                tempFriendList.add(new Friend(
+                        rs.getString(1),
+                        Boolean.parseBoolean(rs.getString(2)),
+                        eCURRENT_STATUS.valueOf(rs.getString(3)),
+                        rs.getString(4)));
+            }
+        }
+        catch (SQLException e) {
+            myServer.writeToConsole("Error generating friends list for " + username + "\n");
+        }
+        return tempFriendList;
     }
 
     /**
@@ -67,7 +223,7 @@ public class ServerInstructions {
         }
         return isSuccessful;
     }
-
+    
     /**
      * retrieving data from the database
      *
@@ -108,7 +264,7 @@ public class ServerInstructions {
     }
 
     private String processSQLString(SQL_CALLS calls, String var1, String var2, String var3) {
-        String sqlString = "";
+        String sqlString;
 
         switch (calls) {
             case Login:
@@ -119,6 +275,22 @@ public class ServerInstructions {
             case Register:
                 sqlString = "{ call register_user(?,?,?)}";
                 break;
+            case GetFriendsList:
+                return "SELECT username, online_status, current_status, text_status\n"
+                        + "FROM user_credentials\n"
+                        + "WHERE EXISTS ( SELECT username\n"
+                        + "FROM " + var1 + "FL\n"
+                        + "WHERE username = friend AND blocked = no)";
+            case GetOnlyOnlineFriends:
+                return "SELECT username, online_status\n"
+                        + "FROM user_credentials\n"
+                        + "WHERE EXISTS ( SELECT username\n"
+                        + "FROM " + var1 + "FL\n"
+                        + "WHERE username = friend AND blocked = no) AND online_status = 1";
+            case GetClientAsFriend:
+                return "SELECT username, online_status, current_status, text_status\n"
+                        + "FROM user_credentials\n"
+                        + "WHERE username = '" + var1 + "'";
             default:
                 sqlString = null;
         }
@@ -130,7 +302,11 @@ public class ServerInstructions {
     }
 
     private enum SQL_CALLS {
-        Login, Register
+        Login, 
+        Register, 
+        GetFriendsList,
+        GetOnlyOnlineFriends,
+        GetClientAsFriend
     }
 
 }

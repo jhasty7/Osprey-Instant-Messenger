@@ -3,7 +3,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Optional;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -22,10 +21,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -37,6 +34,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
@@ -46,17 +44,11 @@ import javafx.util.Callback;
  */
 public class MainWindow extends Application {
     
-    private String username;
-    private USER_STATUS myStatus = USER_STATUS.available;
-    private Color myColor;
-    private String myFontFamily;
-    private Font myFont;
+    // very important variables/objects
+    private FriendsList myFriendsList;
+    private eCURRENT_STATUS myStatus = eCURRENT_STATUS.available;
     private String myTextStatus;
     public static ArrayList<MessageWindow> myWindows;
-    private ArrayList<Friend> friendsList;
-    private FriendsList myFriendsList;
-    private Friend mySelf;
-    private boolean connected = false;
     private ServerListener serverListener;
 
     // javafx ui variables/objects
@@ -72,15 +64,6 @@ public class MainWindow extends Application {
     private MenuItem disconnectMenuItem;
     private MenuItem settingsMenuItem;
     private MenuItem exitMenuItem;
-    private Menu optionsMenu;
-    private Menu fontMenu;
-    private RadioMenuItem timesNewRomanRadioMenuItem;
-    private RadioMenuItem arialRadioMenuItem;
-    private ToggleGroup fontGroup;
-    private Menu colorMenu;
-    private RadioMenuItem blackRadioMenuItem;
-    private RadioMenuItem redRadioMenuItem;
-    private ToggleGroup colorGroup;
     private TextField statusTextField;
     private ListView onlineFriendsListView;
     private Label onlineFriendsListLabel;
@@ -102,19 +85,12 @@ public class MainWindow extends Application {
     private MenuItem removeOfflineFriend;
     private MenuItem blockOfflineFriend;
     
-    public MainWindow(String username){
-        this.username = username;
-        myColor = new Color(0, 0, 0, 0);
-        myFontFamily = "Times New Roman";
-        myFont = Font.font(myFontFamily, 12);
-        friendsList = new ArrayList<>();
+    public MainWindow(){
         dummyStringList = new ArrayList<>();
         dummyStringList.add(new Friend("", false, null, ""));
-        mySelf = new Friend();
-        mySelf = new Friend("butt", true, myStatus, myTextStatus);
         
         // establish lasting connection to the server
-        serverListener = new ServerListener(username);
+        serverListener = new ServerListener();
         new Thread(serverListener).start();
     }
     /*
@@ -140,17 +116,17 @@ public class MainWindow extends Application {
         statusHBox.getChildren().addAll(availableButton, awayButton, busyButton);
         /* statusHBox button listeners */
         availableButton.setOnAction(e -> {
-            myStatus = USER_STATUS.available;
+            myStatus = eCURRENT_STATUS.available;
             statusRectangle.setFill(Color.LIGHTGREEN);
             buttonDisabler();
         });
         awayButton.setOnAction(e -> {
-            myStatus = USER_STATUS.away;
+            myStatus = eCURRENT_STATUS.away;
             statusRectangle.setFill(Color.YELLOW);
             buttonDisabler();
         });
         busyButton.setOnAction(e -> {
-            myStatus = USER_STATUS.busy;
+            myStatus = eCURRENT_STATUS.busy;
             statusRectangle.setFill(Color.RED);
             buttonDisabler();
         });
@@ -166,29 +142,8 @@ public class MainWindow extends Application {
         fileMenu = new Menu("File");
         fileMenu.getItems().addAll(blockListMenuItem,disconnectMenuItem, settingsMenuItem, exitMenuItem);
         //blockListMenuItem.setOnAction();
-        
-        fontMenu = new Menu("Font");
-        fontGroup = new ToggleGroup();
-        timesNewRomanRadioMenuItem = new RadioMenuItem("Times New Roman");
-        timesNewRomanRadioMenuItem.setSelected(true);
-        arialRadioMenuItem = new RadioMenuItem("Arial");
-        timesNewRomanRadioMenuItem.setToggleGroup(fontGroup);
-        arialRadioMenuItem.setToggleGroup(fontGroup);
-        fontMenu.getItems().addAll(timesNewRomanRadioMenuItem, arialRadioMenuItem);
 
-        colorMenu = new Menu("Color");
-        colorGroup = new ToggleGroup();
-        blackRadioMenuItem = new RadioMenuItem("Black");
-        blackRadioMenuItem.setSelected(true);
-        redRadioMenuItem = new RadioMenuItem("Red");
-        blackRadioMenuItem.setToggleGroup(colorGroup);
-        redRadioMenuItem.setToggleGroup(colorGroup);
-        colorMenu.getItems().addAll(blackRadioMenuItem, redRadioMenuItem);
-
-        optionsMenu = new Menu("Options");
-        optionsMenu.getItems().addAll(fontMenu, colorMenu);
-
-        menuBar.getMenus().addAll(fileMenu, optionsMenu);
+        menuBar.getMenus().addAll(fileMenu);
 
         /* menu items action listeners */
         disconnectMenuItem.setOnAction(e -> {
@@ -202,10 +157,7 @@ public class MainWindow extends Application {
         exitMenuItem.setOnAction(e -> {
             exit();
         });
-        timesNewRomanRadioMenuItem.setOnAction(new FontRadioMenuItemListener());
-        arialRadioMenuItem.setOnAction(new FontRadioMenuItemListener());
-        blackRadioMenuItem.setOnAction(new ColorRadioMenuItemListener());
-        redRadioMenuItem.setOnAction(new ColorRadioMenuItemListener());
+        
         /* Pressing the X in the corner of the window */
         primaryStage.setOnCloseRequest(e -> {
             exit();
@@ -213,7 +165,7 @@ public class MainWindow extends Application {
 
         /* status text field */
         statusTextField = new TextField("Enter your status..");
-        statusTextField.setFont(Font.font(myFontFamily, FontPosture.ITALIC, 12));
+        statusTextField.setFont(Font.font("Times New Roman", FontWeight.LIGHT, FontPosture.REGULAR, 10));
         statusTextField.setFocusTraversable(false);
         statusTextField.prefWidthProperty().bind(flowPane.widthProperty());
         statusTextField.focusedProperty().addListener(new StatusTextFieldListener());
@@ -302,7 +254,7 @@ public class MainWindow extends Application {
      * disables status buttons accordingly
      */
     private void buttonDisabler() {
-        serverListener.updateUserStatus(myStatus);
+        serverListener.updateCurrentStatus(myStatus);
         switch (myStatus) {
             case available:
                 availableButton.setDisable(true);
@@ -353,7 +305,7 @@ public class MainWindow extends Application {
     private void updateFriendsListGUI() {
 
         if (!myFriendsList.getOnlineFriends().isEmpty()) {
-            if (!myFriendsList.getOnlineFriends().get(0).getUserName().equals("")) {
+            if (!myFriendsList.getOnlineFriends().get(0).getUsername().equals("")) {
                 onlineFriendsObservableList
                         = FXCollections.observableArrayList(myFriendsList.getOnlineFriends());
                 onlineFriendsListView.setItems(onlineFriendsObservableList);
@@ -368,7 +320,7 @@ public class MainWindow extends Application {
             }
         }
         if (!myFriendsList.getOfflineFriends().isEmpty()) {
-            if (!myFriendsList.getOfflineFriends().get(0).getUserName().equals("")) {
+            if (!myFriendsList.getOfflineFriends().get(0).getUsername().equals("")) {
                 offlineFriendsObservableList
                         = FXCollections.observableArrayList(myFriendsList.getOfflineFriends());
                 offlineFriendsListView.setItems(offlineFriendsObservableList);
@@ -435,12 +387,12 @@ public class MainWindow extends Application {
             super.updateItem(item, empty);
 
             if (item != null) {
-                if (item.getUserName().equals("")) {
+                if (item.getUsername().equals("")) {
                     setText("");
                     setDisable(true);
                 }
                 else {
-                    setText(item.getUserName());
+                    setText(item.getUsername());
                     setDisable(false);
                 }
             }
@@ -468,12 +420,12 @@ public class MainWindow extends Application {
             super.updateItem(item, empty);
 
             if (item != null) {
-                if (item.getUserName().equals("")) {
+                if (item.getUsername().equals("")) {
                     setText("");
                     setDisable(true);
                 }
                 else {
-                    setText(item.getUserName());
+                    setText(item.getUsername());
                     setDisable(false);
                 }
             }
@@ -491,7 +443,7 @@ public class MainWindow extends Application {
      */
     private void openNewChatWindow() {
         if (onlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
-            mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUserName();
+            mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
             if (StageHelper.getStages().size() == 1) {
                 javafx.application.Platform.runLater(() -> {
                     Stage newStage = new Stage();
@@ -502,7 +454,7 @@ public class MainWindow extends Application {
             else {
                 /*
                  * Find a better way to do this,
-                 * i couldn't think of another way -Josh
+                 * i couldn't think of another way
                 */
                 String tempStr, outerStr;
 
@@ -525,27 +477,6 @@ public class MainWindow extends Application {
     }
 
     /*
-     * event handler for the font group menu item
-     */
-    private class FontRadioMenuItemListener implements EventHandler<ActionEvent> {
-
-        @Override
-        public void handle(ActionEvent event) {
-            RadioMenuItem temp = (RadioMenuItem) event.getSource();
-            myFontFamily = temp.getText();
-            switch (myFontFamily) {
-                case "Times New Roman":
-                    myFont = Font.font(myFontFamily, 12);
-                    break;
-                case "Arial":
-                    myFont = Font.font(myFontFamily, 12);
-                    break;
-                default:
-            }
-        }
-    }
-
-    /*
      * status text field gain/lose focus
      */
     private class StatusTextFieldListener implements ChangeListener<Boolean> {
@@ -555,14 +486,14 @@ public class MainWindow extends Application {
                 Boolean oldValue, Boolean newValue) {
             if (newValue) {
                 statusTextField.clear();
-                statusTextField.setFont(myFont);
             }
             else {
                 if (statusTextField.getText() != null && !statusTextField.getText().matches("^\\s*$")
                         && statusTextField.getText().length() < 40 && statusTextField.getText().length() > 3) {
                     myTextStatus = statusTextField.getText();
                     statusTextField.setText(myTextStatus);
-                    serverListener.updateStatusText(myTextStatus);
+                    
+                    serverListener.updateTextStatus(myTextStatus);
                 }
                 else {
                     if (myTextStatus != null) {
@@ -573,7 +504,6 @@ public class MainWindow extends Application {
                     }
                 }
 
-                statusTextField.setFont(Font.font(myFontFamily, FontPosture.ITALIC, 12));
             }
         }
 
@@ -632,7 +562,7 @@ public class MainWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             if (onlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
-                mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUserName();
+                mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
 
                 Alert removeFriendAlert = new Alert(AlertType.CONFIRMATION);
                 removeFriendAlert.setTitle("Remove friend");
@@ -655,7 +585,7 @@ public class MainWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             if (onlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
-                mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUserName();
+                mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
 
                 Alert removeFriendAlert = new Alert(AlertType.CONFIRMATION);
                 removeFriendAlert.setTitle("Goodnight Sweet Prince");
@@ -679,7 +609,7 @@ public class MainWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             if (offlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
-                mySelection = ((Friend) offlineFriendsListView.getSelectionModel().getSelectedItem()).getUserName();
+                mySelection = ((Friend) offlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
 
                 Alert removeFriendAlert = new Alert(AlertType.CONFIRMATION);
                 removeFriendAlert.setTitle("Remove friend");
@@ -704,7 +634,7 @@ public class MainWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             if (offlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
-                mySelection = ((Friend) offlineFriendsListView.getSelectionModel().getSelectedItem()).getUserName();
+                mySelection = ((Friend) offlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
 
                 Alert removeFriendAlert = new Alert(AlertType.CONFIRMATION);
                 removeFriendAlert.setTitle("Goodnight Sweet Prince");
@@ -720,29 +650,8 @@ public class MainWindow extends Application {
         }
 
     }
-
-    /*
-     * event handler for the color group menu item
-     * TODO: put this in the chat window; then create an options window
-     */
-    private class ColorRadioMenuItemListener implements EventHandler<ActionEvent> {
-
-        @Override
-        public void handle(ActionEvent event) {
-            RadioMenuItem temp = (RadioMenuItem) event.getSource();
-            switch (temp.getText()) {
-                case "Black":
-                    myColor = Color.BLACK;
-                    break;
-                case "Red":
-                    myColor = Color.RED;
-                    break;
-                default:
-            }
-        }
-    }
     
-        /*
+    /*
      * clicking the X button in the top right corner of the window
     */
     private class clickXToClose implements EventHandler<WindowEvent>{

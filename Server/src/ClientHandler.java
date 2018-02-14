@@ -18,27 +18,18 @@ public class ClientHandler implements Runnable {
     private Socket client;
     private ServerInstructions serverInstructions;
     private Server myServer;
-
-    // dependency packet objects
-    private AddFriend addFriend;
-    private Packet packet;
-    private Message message;
-    private LoginRegisterPacket loginPacket;
-    private ConnectingPacket connectingPacket;
+    private String clientsUsername = null;
+    private Friend clientAsFriend;
 
     public ClientHandler(Socket client, Server myServer) throws IOException {
         this.client = client;
         this.myServer = myServer;
 
-        addFriend = new AddFriend();
-        packet = new Packet();
-        connectingPacket = new ConnectingPacket();
-        loginPacket = new LoginRegisterPacket();
-        message = new Message();
-
-        serverInstructions = new ServerInstructions();
+        serverInstructions = new ServerInstructions(myServer);
         out = new ObjectOutputStream(client.getOutputStream());
         in = new ObjectInputStream(client.getInputStream());
+
+        clientAsFriend = new Friend();
     }
 
     public void clientListening() throws IOException, ClassNotFoundException {
@@ -55,63 +46,113 @@ public class ClientHandler implements Runnable {
              * client will reconnect on a more long term basis. However; it will
              * still check any incoming packets if they are login first.
              */
-            if (obj.getClass().equals(loginPacket.getClass())) {
+            if (obj.getClass().equals(LoginRegisterPacket.class)) {
 
-                loginPacket = (LoginRegisterPacket) obj;
-                
+                LoginRegisterPacket lrp = (LoginRegisterPacket) obj;
+
                 // check to see if it's for loging in
-                if (loginPacket.isLogin()) {
-                    if (serverInstructions.login(loginPacket.getUsername(), loginPacket.getPassword())) {
+                if (lrp.isLogin()) {
+                    if (serverInstructions.login(lrp.getUsername(), lrp.getPassword())) {
                         // success
-                        loginPacket = new LoginRegisterPacket();
-                        loginPacket.setLoginTrue();
-                        loginPacket.setSuccessful(true);
+                        lrp = new LoginRegisterPacket();
+                        lrp.setLoginTrue();
+                        lrp.setSuccessful(true);
                     }
                     else {
                         // failure
-                        loginPacket = new LoginRegisterPacket();
-                        loginPacket.setLoginTrue();
-                        loginPacket.setSuccessful(false);
+                        lrp = new LoginRegisterPacket();
+                        lrp.setLoginTrue();
+                        lrp.setSuccessful(false);
                     }
                 }
                 // check to see if it's for registering
-                else if (loginPacket.isRegister()) {
-                    if (serverInstructions.register(loginPacket.getUsername(), loginPacket.getPassword())) {
+                else if (lrp.isRegister()) {
+                    if (serverInstructions.register(lrp.getUsername(), lrp.getPassword())) {
                         // success
-                        loginPacket = new LoginRegisterPacket();
-                        loginPacket.setRegisterTrue();
-                        loginPacket.setSuccessful(true);
+                        lrp = new LoginRegisterPacket();
+                        lrp.setRegisterTrue();
+                        lrp.setSuccessful(true);
                     }
                     else {
                         // failure
-                        loginPacket = new LoginRegisterPacket();
-                        loginPacket.setRegisterTrue();
-                        loginPacket.setSuccessful(false);
+                        lrp = new LoginRegisterPacket();
+                        lrp.setRegisterTrue();
+                        lrp.setSuccessful(false);
                     }
                 }
-                
+
                 // tell the client the login/registration was validated (or not)
-                out.writeObject(loginPacket);
+                out.writeObject(lrp);
                 // and drop its connection allowing it to reconnect more long term
                 remainsListening = false;
 
             }
-            else if (obj.getClass().equals(connectingPacket.getClass())) {
+            else if (obj.getClass().equals(Connecting.class)) {
 
-                connectingPacket = (ConnectingPacket) obj;
+                Connecting connectingPacket = (Connecting) obj;
+
+                // add user to the userlist
                 connectedUsers.add(new User(client, connectingPacket.getUsername(), in, out));
+
+                // bind username to this thread
+                clientsUsername = connectingPacket.getUsername();
                 myServer.writeToConsole(connectingPacket.getUsername() + " added to connected user list");
 
+                // generate friends list
+                FriendsList fl = serverInstructions.retrieveFriendsList(clientsUsername);
+                // send user their friends list
+                OutgoingPacketHandler.SendFriendsList(out, fl);
+                // update clientAsFriend
+                clientAsFriend = serverInstructions.retrieveClientAsFriend(clientsUsername);
+                OutgoingPacketHandler.SendFriendUpdateComingOnline(out, fl.getOnlineFriends(), clientAsFriend);
+
+                // drop reference to friends list (it will quickly be out of date)
+                fl = null;
+
             }
-            else if (obj.getClass().equals(message.getClass())) {
-                message = (Message) obj;
+            else if (obj.getClass().equals(Message.class)) {
+                Message message = (Message) obj;
                 myServer.writeToConsole("From " + message.getComingFrom() + " to " + message.getSendingTo() + " > " + message.getMessage());
                 new Thread(new MessageHandler(message)).start();
             }
-            else if (obj.getClass().equals(addFriend.getClass())) {
+            else if (obj.getClass().equals(AddFriend.class)) {
 
-                addFriend = (AddFriend) obj;
+                AddFriend addFriend = (AddFriend) obj;
+                OutgoingPacketHandler.SendConfirmation(out, serverInstructions.addFriend(clientsUsername, addFriend.getFriend()), "AddFriend");
 
+            }
+            else if (obj.getClass().equals(RemoveFriend.class)) {
+
+                RemoveFriend removeFriend = (RemoveFriend) obj;
+                OutgoingPacketHandler.SendConfirmation(out, serverInstructions.removeFriend(clientsUsername, removeFriend.getFriend()), "RemoveFriend");
+
+            }
+            else if (obj.getClass().equals(TextStatus.class)) {
+
+                TextStatus textStatus = (TextStatus) obj;
+                clientAsFriend.setTextStatus(textStatus.getTextStatus());
+                OutgoingPacketHandler.SendConfirmation(out, serverInstructions.setTextStatus(clientsUsername, textStatus.getTextStatus()), "StatusText");
+
+            }
+            else if (obj.getClass().equals(OnlineStatus.class)) {
+
+                OnlineStatus onlineStatus = (OnlineStatus) obj;
+                clientAsFriend.setOnlineStatus(onlineStatus.getOnlineStatusBoolean());
+                serverInstructions.setOnlineStatus(clientsUsername, onlineStatus.getOnlineStatusEnum());
+
+            }
+            else if (obj.getClass().equals(CurrentStatus.class)) {
+
+                CurrentStatus currentStatus = (CurrentStatus) obj;
+                clientAsFriend.setCurrentStatus(currentStatus.getCurrentStatus());
+                serverInstructions.setCurrentStatus(clientsUsername, currentStatus.getCurrentStatus());
+
+            }
+            else if (obj.getClass().equals(Disconnecting.class)) {
+                remainsListening = false;
+                serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.offline);
+                clientAsFriend.setOnlineStatus(false);
+                OutgoingPacketHandler.SendFriendUpdateGoingOffline(serverInstructions.retrieveOnlyOnlineFriends(clientsUsername), clientAsFriend);
             }
             else {
                 //packet deserialization problem
@@ -122,12 +163,23 @@ public class ClientHandler implements Runnable {
     }
 
     private void dropConnection() throws IOException {
+
+        // remove the user from the server owned connected userlist if possible
+        if (clientsUsername != null) {
+            for (User thisUser : connectedUsers) {
+                if (thisUser.getUsersUsername().equals(clientsUsername)) {
+                    connectedUsers.remove(thisUser);
+                }
+            }
+        }
+
         client.close();
         in.close();
         out.close();
         client = null;
         in = null;
         out = null;
+
     }
 
     /**
@@ -140,6 +192,7 @@ public class ClientHandler implements Runnable {
         }
         catch (IOException | ClassNotFoundException ex) {
             myServer.writeToConsole("Error: in clientHandler class run method");
+            myServer.writeToConsole(ex.toString());
         }
     }
 

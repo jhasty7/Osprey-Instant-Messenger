@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 
@@ -33,8 +34,28 @@ public class Config implements Serializable{
     private String hostname = "127.0.0.1";
     private int portNumber = 45566;
     
+    // extra infomation no one needs to know about
+    private String username = null;
+    private String password = null;
+    
     public Config(){
         readConfigFile();
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public boolean isRememberUsernamePassword() {
@@ -171,6 +192,14 @@ public class Config implements Serializable{
 
     public void setFontSize(int fontSize) {
         this.fontSize = fontSize;
+    }
+    
+    public Font getFontAsFont(){
+        return Font.font(fontStyle,getFontWeightEnum(),getFontPostureEnum(),fontSize);
+    }
+    
+    public FontValues getFontAsFontValue(){
+        return new FontValues(fontStyle,fontWeight,fontPosture,fontSize);
     }
     
     private void readConfigFile() {
