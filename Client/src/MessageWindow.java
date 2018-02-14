@@ -40,6 +40,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 public class MessageWindow extends Application {
     
     private static final String LOG_PATH = System.getProperty("user.dir") + "/data/logs/";
+    private ServerListener serverListener;
     private String friendName;
     private TextArea inputTextArea;
     private Button sendMessageButton;
@@ -56,11 +57,8 @@ public class MessageWindow extends Application {
     private VBox textFlowVBox;
     private boolean manualScrolling = false;
     
-    private static Color myColor;
-    private static Font myFont;
-    
-    public MessageWindow(String friendName) {
-        
+    public MessageWindow(String friendName, ServerListener serverListener) {
+        this.serverListener = serverListener;
         this.friendName = friendName;
         messageLog.set("");
         
@@ -240,7 +238,7 @@ public class MessageWindow extends Application {
      * build message to display from text message and display it on textflow
      */
     public void displayIncomingText(Message textMessage) {
-
+        
         String message = textMessage.getComingFrom() + ": " + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
@@ -292,13 +290,13 @@ public class MessageWindow extends Application {
     private void sendMessage(String message) {
         // create Message object and display it locally, then send it to the server
         Message textMessage = new Message(
-                DeveloperWindow.USER_NAME,
+                MainWindow.username,
                 friendName,
                 message,
                 Config.cfg.getFontAsFontValue(),
                 Config.cfg.getColor());
         displayMyText(textMessage);
-        //TODO: send the packet out to the server
+        serverListener.sendMessage(textMessage);
         
     }
     

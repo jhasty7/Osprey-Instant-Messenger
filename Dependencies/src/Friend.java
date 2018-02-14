@@ -7,6 +7,10 @@ public class Friend implements Serializable{
     private boolean onlineStatus;
     private eCURRENT_STATUS currentStatus;
     private String textStatus;
+    private boolean isUpdate = false;
+    private boolean isAdd = false;
+    private boolean isRemove = false;
+    private boolean isBlock = false;
     
     public Friend(){
         username = null;
@@ -61,6 +65,40 @@ public class Friend implements Serializable{
     public void setUsername(String username){
         this.username = username;
     }
+
+    public boolean isUpdate() {
+        return isUpdate;
+    }
+
+    public void setIsUpdate(boolean isUpdate) {
+        this.isUpdate = isUpdate;
+    }
+
+    public boolean isAdd() {
+        return isAdd;
+    }
+
+    public void setIsAdd(boolean isAdd) {
+        this.isAdd = isAdd;
+    }
+
+    public boolean isRemove() {
+        return isRemove;
+    }
+
+    public void setIsRemove(boolean isRemove) {
+        this.isRemove = isRemove;
+    }
+
+    public boolean isBlock() {
+        return isBlock;
+    }
+
+    public void setIsBlock(boolean isBlock) {
+        this.isBlock = isBlock;
+    }
+    
+    
     
     @Override
     public String toString(){

@@ -177,7 +177,7 @@ public class Login extends Application {
                 Config.cfg.setPassword(password.getText());
                 serverListener = null;
                 primaryStage.close();
-                MainWindow mw = new MainWindow();
+                MainWindow mw = new MainWindow(username.getText());
                 mw.start(primaryStage);
                 break;
 

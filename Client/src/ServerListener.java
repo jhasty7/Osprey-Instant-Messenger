@@ -51,7 +51,8 @@ public class ServerListener implements Runnable {
                     myMainWindow.incomingMessage((Message) obj);
                 }
                 else if (obj.getClass().equals(Friend.class)) {
-                    myMainWindow.updateFriend((Friend) obj);
+                    myMainWindow.processFriend((Friend) obj);
+                    DeveloperWindow.displayMessage(((Friend) obj).toString());
                 }
                 else if (obj.getClass().equals(ServerConfirmation.class)) {
                     ServerConfirmation tempSC = (ServerConfirmation) obj;
@@ -64,7 +65,7 @@ public class ServerListener implements Runnable {
         catch (IOException | ClassNotFoundException ex) {
             DeveloperWindow.displayMessage("Error: in ServerListener at run; receiving data");
         }
-        
+
     }
 
     // basic client functions
@@ -75,10 +76,6 @@ public class ServerListener implements Runnable {
         }
     }
 
-    /**
-     * begin outgoing packets
-     *
-     */
     public void tellServerToDisconnect() {
         try {
             out.writeObject(new Disconnecting());
@@ -88,6 +85,21 @@ public class ServerListener implements Runnable {
         }
         catch (IOException ex) {
             DeveloperWindow.displayMessage("Error: sending disconnecting packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
+    /**
+     * begin outgoing packets
+     *
+     */
+
+    public void sendMessage(Message textMessage) {
+        try {
+            out.writeObject(textMessage);
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending message packet");
             DeveloperWindow.displayMessage(ex.toString());
         }
     }

@@ -1,7 +1,5 @@
 
-import com.sun.javafx.stage.StageHelper;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Optional;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -51,6 +49,7 @@ public class MainWindow extends Application {
     private String myTextStatus;
     public static ArrayList<MessageWindow> myChatWindows;
     private ServerListener serverListener;
+    public static String username;
 
     // javafx ui variables/objects
     private Stage primaryStage;
@@ -86,10 +85,11 @@ public class MainWindow extends Application {
     private MenuItem removeOfflineFriend;
     private MenuItem blockOfflineFriend;
 
-    public MainWindow() {
+    public MainWindow(String username) {
         dummyStringList = new ArrayList<>();
         dummyStringList.add(new Friend("", false, null, ""));
-
+        myChatWindows = new ArrayList<>();
+        this.username = username;
         // establish lasting connection to the server
         serverListener = new ServerListener(this);
         new Thread(serverListener).start();
@@ -461,14 +461,14 @@ public class MainWindow extends Application {
                 }
                 // if you didn't find the window create one
                 if (!foundWindow) {
-                    MessageWindow newWindow = new MessageWindow(mySelection);
+                    MessageWindow newWindow = new MessageWindow(mySelection, serverListener);
                     myChatWindows.add(newWindow);
                     newWindow.start(new Stage());
                 }
             }
             // this list was empty
             else {
-                MessageWindow newWindow = new MessageWindow(mySelection);
+                MessageWindow newWindow = new MessageWindow(mySelection, serverListener);
                 myChatWindows.add(newWindow);
                 newWindow.start(new Stage());
             }
@@ -479,35 +479,37 @@ public class MainWindow extends Application {
      * incoming message to open message window
      */
     public void incomingMessage(Message textMessage) {
-        String friendName = textMessage.getComingFrom();
-        boolean foundWindow = false;
-        if (!myChatWindows.isEmpty()) {
+        javafx.application.Platform.runLater(() -> {
+            String friendName = textMessage.getComingFrom();
+            boolean foundWindow = false;
 
-            // does window exist already
-            for (MessageWindow window : myChatWindows) {
-                if (window.getFriendName().equals(friendName)) {
-                    // find window, display message, and request focus
-                    window.displayIncomingText(textMessage);
-                    window.getStage().requestFocus();
-                    foundWindow = true;
+            if (!myChatWindows.isEmpty()) {
+
+                // does window exist already
+                for (MessageWindow window : myChatWindows) {
+                    if (window.getFriendName().equals(friendName)) {
+                        // find window, display message, and request focus
+                        window.displayIncomingText(textMessage);
+                        window.getStage().requestFocus();
+                        foundWindow = true;
+                    }
+                }
+                // if window wasn't found, open up new window
+                if (!foundWindow) {
+                    MessageWindow newWindow = new MessageWindow(friendName, serverListener);
+                    myChatWindows.add(newWindow);
+                    newWindow.start(new Stage());
+                    newWindow.displayIncomingText(textMessage);
                 }
             }
-            // if window wasn't found, open up new window
-            if (!foundWindow) {
-                MessageWindow newWindow = new MessageWindow(friendName);
+            // if the list was empty
+            else {
+                MessageWindow newWindow = new MessageWindow(friendName, serverListener);
                 myChatWindows.add(newWindow);
                 newWindow.start(new Stage());
                 newWindow.displayIncomingText(textMessage);
             }
-        }
-        // if the list was empty
-        else {
-            MessageWindow newWindow = new MessageWindow(friendName);
-            myChatWindows.add(newWindow);
-            newWindow.start(new Stage());
-            newWindow.displayIncomingText(textMessage);
-        }
-
+        });
     }
 
     /*
@@ -715,10 +717,22 @@ public class MainWindow extends Application {
         });
     }
 
-    public void updateFriend(Friend friend) {
+    public void processFriend(Friend friend) {
         javafx.application.Platform.runLater(() -> {
-            this.myFriendsList.updateFriend(friend);
-            updateFriendsListGUI();
+            if (friend.isAdd()) {
+                this.myFriendsList.addFriend(friend);
+                updateFriendsListGUI();
+            }
+            else if (friend.isBlock()) {
+
+            }
+            else if (friend.isRemove()) {
+
+            }
+            else if (friend.isUpdate()) {
+                this.myFriendsList.updateFriend(friend);
+                updateFriendsListGUI();
+            }
         });
     }
 

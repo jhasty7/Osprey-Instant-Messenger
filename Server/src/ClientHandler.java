@@ -97,13 +97,15 @@ public class ClientHandler implements Runnable {
                 // bind username to this thread
                 clientsUsername = connectingPacket.getUsername();
                 myServer.writeToConsole(connectingPacket.getUsername() + " added to connected user list");
-
+                // set user online
+                serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.online);
+                
                 // generate friends list
                 FriendsList fl = serverInstructions.retrieveFriendsList(clientsUsername);
                 // send user their friends list
                 OutgoingPacketHandler.SendFriendsList(out, fl);
                 // update clientAsFriend
-                clientAsFriend = serverInstructions.retrieveClientAsFriend(clientsUsername);
+                clientAsFriend = serverInstructions.getFriendInfoFromDatabase(clientsUsername);
                 OutgoingPacketHandler.SendFriendUpdateComingOnline(out, fl.getOnlineFriends(), clientAsFriend);
 
                 // drop reference to friends list (it will quickly be out of date)
@@ -116,10 +118,16 @@ public class ClientHandler implements Runnable {
                 new Thread(new MessageHandler(message)).start();
             }
             else if (obj.getClass().equals(AddFriend.class)) {
-
+                boolean isSuccessful;
                 AddFriend addFriend = (AddFriend) obj;
-                OutgoingPacketHandler.SendConfirmation(out, serverInstructions.addFriend(clientsUsername, addFriend.getFriend()), "AddFriend");
 
+                isSuccessful = serverInstructions.addFriend(clientsUsername, addFriend.getFriend());
+                OutgoingPacketHandler.SendConfirmation(out, isSuccessful, "AddFriend");
+                if (isSuccessful) {
+                    Friend tempfriend = serverInstructions.getFriendInfoFromDatabase(addFriend.getFriend());
+                    tempfriend.setIsAdd(true);
+                    OutgoingPacketHandler.sendFriendToClient(out,tempfriend);
+                }
             }
             else if (obj.getClass().equals(RemoveFriend.class)) {
 
@@ -164,7 +172,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void dropConnection() throws IOException {
-
+        serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.offline);
         // remove the user from the server owned connected userlist if possible
         if (clientsUsername != null) {
             for (User thisUser : connectedUsers) {

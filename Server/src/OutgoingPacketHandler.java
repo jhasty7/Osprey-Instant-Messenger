@@ -14,8 +14,13 @@ public final class OutgoingPacketHandler {
         out.writeObject(friendsList);
     }
     
+    public static void sendFriendToClient(ObjectOutputStream out, Friend friend) throws IOException{
+        out.writeObject(friend);
+    }
+    
     public static void SendFriendUpdateComingOnline(ObjectOutputStream out, ArrayList<Friend> onlineFriends, Friend tempFriend) throws IOException{
         
+        tempFriend.setIsUpdate(true);
         // send your friend ID to yourself
         out.writeObject(tempFriend);
         
@@ -30,6 +35,7 @@ public final class OutgoingPacketHandler {
     }
     
     public static void SendFriendUpdateGoingOffline(ArrayList<Friend> onlineFriends, Friend tempFriend) throws IOException{
+        tempFriend.setIsUpdate(true);
         // send your friend ID to anyone that's online
         for (Friend onlineFriend : onlineFriends) {
             for(User user : ClientHandler.connectedUsers){
