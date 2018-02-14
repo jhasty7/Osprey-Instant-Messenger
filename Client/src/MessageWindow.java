@@ -36,6 +36,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.geometry.Insets;
 
 public class MessageWindow extends Application {
     
@@ -100,8 +101,10 @@ public class MessageWindow extends Application {
         inputTextArea.setMaxSize(180, 110);
         inputTextArea.setWrapText(true);
         inputTextArea.setText("");
-        //Michelle's wrapping changes
+        //Michelle's wrapping changes and textflow padding
         textFlowScrollPane.setFitToWidth(true);
+        textFlow.setPadding(new Insets(0,10,0,10));
+        
         //
         
         /* various component listeners */
@@ -116,6 +119,8 @@ public class MessageWindow extends Application {
             inputTextArea.setMaxWidth(primaryStage.getWidth() - 220);
             inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
         });
+        
+        
         
         pane.setPrefSize(350.0, 350.0);
         pane.setVgap(5);
@@ -135,6 +140,7 @@ public class MessageWindow extends Application {
         primaryStage.setResizable(true);
         primaryStage.setTitle(friendName);
         primaryStage.setScene(scene);
+        
         
         // check for logs
         if(Config.cfg.isAutoSaveLogs()){
@@ -220,6 +226,13 @@ public class MessageWindow extends Application {
                 }
 
             }
+            else{
+                if (inputTextArea.getText() != null) {
+                    inputTextArea.setStyle("-fx-text-fill: #" + Integer.toHexString(Config.cfg.getColor().hashCode()));
+                    inputTextArea.setFont(Config.cfg.getFontAsFont());
+                }
+            
+            }
 
         }
 
@@ -261,7 +274,7 @@ public class MessageWindow extends Application {
     
     void displayMyText(Message textMessage){
         
-        String message = textMessage.getComingFrom() + ": " + textMessage.getMessage() + "\r\n";
+        String message = "\n" + textMessage.getComingFrom() + ":\n" + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
         Text newText = new Text(message);

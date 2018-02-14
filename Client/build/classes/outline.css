@@ -9,12 +9,16 @@
     -fx-stroke-width: 1px;
 }
 
+
 #cb .text{
     -fx-fill: whitesmoke;
     -fx-stroke: black;
     -fx-stroke-width: .3px;
 }
+<<<<<<< HEAD
 
 #login-mainmenubar {
     -fx-background-color: whitesmoke;
-}
+}}
+=======
+>>>>>>> a6ad4b0b60febec39bd2ec70025ec96067dfe8e2
