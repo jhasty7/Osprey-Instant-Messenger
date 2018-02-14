@@ -100,6 +100,9 @@ public class MessageWindow extends Application {
         inputTextArea.setMaxSize(180, 110);
         inputTextArea.setWrapText(true);
         inputTextArea.setText("");
+        //Michelle's wrapping changes
+        textFlowScrollPane.setFitToWidth(true);
+        //
         
         /* various component listeners */
         sendMessageButton.setOnAction(new SendButtonActionListener());

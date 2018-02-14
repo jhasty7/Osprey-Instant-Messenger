@@ -1,0 +1,18 @@
+Josh: test
+Josh: did
+Josh: your
+Josh: window popup
+Michelle: nopw, no save
+Michelle: It poped up, yeah
+Josh: the only way
+Josh: the settings save, is if you click the exit button on the developer window
+Josh: if the program closes any other way it won't save
+Josh: i have that for testing
+Michelle: Oh, sorry. want me to try again? 
+Josh: sometimes i dont want settings to save
+Josh: okay, check auto save
+Josh: but just save the settings
+Michelle: setting saved
+Josh: now, just close this chat window
+Josh: dont close the program
+Michelle: k
