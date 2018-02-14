@@ -1,8 +1,10 @@
+
 import com.sun.javafx.stage.StageHelper;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Optional;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -36,19 +38,18 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
 /**
  * class handles the GUI for the chat program handles
  */
 public class MainWindow extends Application {
-    
+
     // very important variables/objects
     private FriendsList myFriendsList;
     private eCURRENT_STATUS myStatus = eCURRENT_STATUS.available;
     private String myTextStatus;
-    public static ArrayList<MessageWindow> myWindows;
+    public static ArrayList<MessageWindow> myChatWindows;
     private ServerListener serverListener;
 
     // javafx ui variables/objects
@@ -84,15 +85,16 @@ public class MainWindow extends Application {
     private ContextMenu offlineFriendContextMenu;
     private MenuItem removeOfflineFriend;
     private MenuItem blockOfflineFriend;
-    
-    public MainWindow(){
+
+    public MainWindow() {
         dummyStringList = new ArrayList<>();
         dummyStringList.add(new Friend("", false, null, ""));
-        
+
         // establish lasting connection to the server
-        serverListener = new ServerListener();
+        serverListener = new ServerListener(this);
         new Thread(serverListener).start();
     }
+
     /*
      * Main GUI window
      **************************/
@@ -134,30 +136,24 @@ public class MainWindow extends Application {
         /* menu bars and items */
         menuBar = new MenuBar();
         menuBar.prefWidthProperty().bind(primaryStage.widthProperty());
-        
+
         blockListMenuItem = new MenuItem("Block List");
         disconnectMenuItem = new MenuItem("Disconnect");
         settingsMenuItem = new MenuItem("Settings");
         exitMenuItem = new MenuItem("Exit");
         fileMenu = new Menu("File");
-        fileMenu.getItems().addAll(blockListMenuItem,disconnectMenuItem, settingsMenuItem, exitMenuItem);
+        fileMenu.getItems().addAll(blockListMenuItem, disconnectMenuItem, settingsMenuItem, exitMenuItem);
         //blockListMenuItem.setOnAction();
 
         menuBar.getMenus().addAll(fileMenu);
 
         /* menu items action listeners */
-        disconnectMenuItem.setOnAction(e -> {
-            serverListener.disconnect();
-            primaryStage.close();
-            // this probably won't work
-            Login newLogin = new Login();
-            newLogin.start(primaryStage);
-        });
+        disconnectMenuItem.setOnAction(new DisconnectMenuItemActionListener());
         settingsMenuItem.setOnAction(new SettingsMenuItemActionListener());
         exitMenuItem.setOnAction(e -> {
             exit();
         });
-        
+
         /* Pressing the X in the corner of the window */
         primaryStage.setOnCloseRequest(e -> {
             exit();
@@ -221,7 +217,6 @@ public class MainWindow extends Application {
         //addFriendSearchButton.setOnAction();
         bottomHBox.getChildren().add(addFriendButton);
         bottomHBox.getChildren().add(addFriendSearchButton);
-        primaryStage.setOnCloseRequest(new clickXToClose());
         // TODO:
         // figure out what to put at the bottombox, time? maybe?
         // 1. time elapsed in online session
@@ -278,25 +273,33 @@ public class MainWindow extends Application {
         }
 
     }
-    
-    
 
     /*
      * exiting the program
      */
     private void exit() {
-        serverListener.disconnect();
         closeAllWindows();
+        serverListener.disconnect();
         primaryStage.close();
-        //Platform.exit();
-        //System.exit(0);
+        serverListener = null;
+        Platform.exit();
+        System.exit(0);
+    }
+
+    private void disconnectFromServer() {
+        closeAllWindows();
+        serverListener.disconnect();
+        serverListener = null;
+        primaryStage.close();
+        Login login = new Login();
+        login.start(new Stage());
     }
 
     /*
      * close all chat windows
      */
     private void closeAllWindows() {
-        
+
     }
 
     /*
@@ -336,7 +339,7 @@ public class MainWindow extends Application {
 
         }
     }
-    
+
     /**
      * javafx ui component action listeners @@@
      */
@@ -348,7 +351,7 @@ public class MainWindow extends Application {
         @Override
         public void handle(MouseEvent event) {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                openNewChatWindow();
+                outgoingMessage();
             }
             else if (event.getButton() == MouseButton.SECONDARY) {
 
@@ -366,7 +369,7 @@ public class MainWindow extends Application {
         public void handle(KeyEvent event) {
             if (event.getCode() == KeyCode.ENTER) {
                 event.consume();
-                openNewChatWindow();
+                outgoingMessage();
             }
         }
 
@@ -439,41 +442,72 @@ public class MainWindow extends Application {
     }
 
     /*
-     * opens a new chat window after various checks
+     * outgoing message to open message window
      */
-    private void openNewChatWindow() {
+    private void outgoingMessage() {
+        boolean foundWindow = false;
         if (onlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
             mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
-            if (StageHelper.getStages().size() == 1) {
-                javafx.application.Platform.runLater(() -> {
-                    Stage newStage = new Stage();
-                    MessageWindow newWindow = new MessageWindow(mySelection);
-                    newWindow.start(newStage);
-                });
-            }
-            else {
-                /*
-                 * Find a better way to do this,
-                 * i couldn't think of another way
-                */
-                String tempStr, outerStr;
+            if (!myChatWindows.isEmpty()) {
 
-                Iterator<Stage> itemList = StageHelper.getStages().iterator();
-                while (itemList.hasNext()) {
-                    outerStr = (itemList.next()).getTitle();
-                    if (outerStr.equals(mySelection)) {
-                        break;
-                    }
-                    if (!itemList.hasNext()) {
-                        javafx.application.Platform.runLater(() -> {
-                            Stage newStage = new Stage();
-                            MessageWindow newWindow = new MessageWindow(mySelection);
-                            newWindow.start(newStage);
-                        });
+                // does window exist already
+                for (MessageWindow window : myChatWindows) {
+                    if (window.getFriendName().equals(mySelection)) {
+                        // if you found a window, this means the user is clicking
+                        // to open an already opened chat window. just request focus.
+                        window.getStage().requestFocus();
+                        foundWindow = true;
                     }
                 }
+                // if you didn't find the window create one
+                if (!foundWindow) {
+                    MessageWindow newWindow = new MessageWindow(mySelection);
+                    myChatWindows.add(newWindow);
+                    newWindow.start(new Stage());
+                }
+            }
+            // this list was empty
+            else {
+                MessageWindow newWindow = new MessageWindow(mySelection);
+                myChatWindows.add(newWindow);
+                newWindow.start(new Stage());
             }
         }
+    }
+
+    /*
+     * incoming message to open message window
+     */
+    public void incomingMessage(Message textMessage) {
+        String friendName = textMessage.getComingFrom();
+        boolean foundWindow = false;
+        if (!myChatWindows.isEmpty()) {
+
+            // does window exist already
+            for (MessageWindow window : myChatWindows) {
+                if (window.getFriendName().equals(friendName)) {
+                    // find window, display message, and request focus
+                    window.displayIncomingText(textMessage);
+                    window.getStage().requestFocus();
+                    foundWindow = true;
+                }
+            }
+            // if window wasn't found, open up new window
+            if (!foundWindow) {
+                MessageWindow newWindow = new MessageWindow(friendName);
+                myChatWindows.add(newWindow);
+                newWindow.start(new Stage());
+                newWindow.displayIncomingText(textMessage);
+            }
+        }
+        // if the list was empty
+        else {
+            MessageWindow newWindow = new MessageWindow(friendName);
+            myChatWindows.add(newWindow);
+            newWindow.start(new Stage());
+            newWindow.displayIncomingText(textMessage);
+        }
+
     }
 
     /*
@@ -492,7 +526,7 @@ public class MainWindow extends Application {
                         && statusTextField.getText().length() < 40 && statusTextField.getText().length() > 3) {
                     myTextStatus = statusTextField.getText();
                     statusTextField.setText(myTextStatus);
-                    
+
                     serverListener.updateTextStatus(myTextStatus);
                 }
                 else {
@@ -550,7 +584,7 @@ public class MainWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            openNewChatWindow();
+            outgoingMessage();
         }
     }
 
@@ -619,7 +653,7 @@ public class MainWindow extends Application {
                 if (result.get() == ButtonType.OK) {
 
                     serverListener.removeFriend(mySelection);
-                    
+
                 }
             }
         }
@@ -650,28 +684,62 @@ public class MainWindow extends Application {
         }
 
     }
-    
+
     /*
-     * clicking the X button in the top right corner of the window
-    */
-    private class clickXToClose implements EventHandler<WindowEvent>{
-        
+     * when you click disconnect in the menu items
+     */
+    private class DisconnectMenuItemActionListener implements EventHandler<ActionEvent> {
+
         @Override
-        public void handle(WindowEvent event){
-            exit();
+        public void handle(ActionEvent event) {
+            disconnectFromServer();
         }
-        
     }
-    
+
     /**
      * opens up the settings window
      */
-    private class SettingsMenuItemActionListener implements EventHandler<ActionEvent>{
+    private class SettingsMenuItemActionListener implements EventHandler<ActionEvent> {
+
         @Override
-        public void handle(ActionEvent event){
+        public void handle(ActionEvent event) {
             Settings settings = new Settings();
             settings.start(new Stage());
         }
     }
-    
+
+    public void setFriendsList(FriendsList myFriendsList) {
+        javafx.application.Platform.runLater(() -> {
+            this.myFriendsList = myFriendsList;
+            updateFriendsListGUI();
+        });
+    }
+
+    public void updateFriend(Friend friend) {
+        javafx.application.Platform.runLater(() -> {
+            this.myFriendsList.updateFriend(friend);
+            updateFriendsListGUI();
+        });
+    }
+
+    public void createAlertFromServer(boolean isSuccessful, String context) {
+        javafx.application.Platform.runLater(() -> {
+            Alert serverAlert;
+            if (isSuccessful) {
+                serverAlert = new Alert(AlertType.CONFIRMATION);
+                serverAlert.setTitle("Success");
+                serverAlert.setHeaderText(context);
+                serverAlert.setContentText("It worked.");
+                serverAlert.showAndWait();
+            }
+            else {
+                serverAlert = new Alert(AlertType.ERROR);
+                serverAlert.setTitle("Failed");
+                serverAlert.setHeaderText(context);
+                serverAlert.setContentText("It failed for some reason.");
+                serverAlert.showAndWait();
+            }
+            updateFriendsListGUI();
+        });
+    }
 }

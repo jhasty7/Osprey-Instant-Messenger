@@ -3,8 +3,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ServerListener implements Runnable {
 
@@ -14,11 +12,16 @@ public class ServerListener implements Runnable {
     public static final String HOST_NAME = Config.cfg.getHostname();
     public static final int PORT_NUMBER = Config.cfg.getPortNumber();
     private boolean isConnected = false;
+    private MainWindow myMainWindow;
 
     public ServerListener() {
         myClient = null;
         in = null;
         out = null;
+    }
+
+    public ServerListener(MainWindow myMainWindow) {
+        this.myMainWindow = myMainWindow;
     }
 
     // incoming messages here on the new thread
@@ -34,33 +37,61 @@ public class ServerListener implements Runnable {
             //send connectingPacket to let the server you are connecting longterm
             out.writeObject(new Connecting(Config.cfg.getUsername()));
 
+            // get your friends list
+            Object inFriendsList = in.readObject();
+            FriendsList tempFriendsList = (FriendsList) inFriendsList;
+            myMainWindow.setFriendsList(tempFriendsList);
             //after this will just wait for new packets from the server
             do {
                 Object obj;
                 obj = in.readObject();
 
                 if (obj.getClass().equals(Message.class)) {
-
+                    // find friend window/if not there pop it up and display message
+                    myMainWindow.incomingMessage((Message) obj);
+                }
+                else if (obj.getClass().equals(Friend.class)) {
+                    myMainWindow.updateFriend((Friend) obj);
+                }
+                else if (obj.getClass().equals(ServerConfirmation.class)) {
+                    ServerConfirmation tempSC = (ServerConfirmation) obj;
+                    myMainWindow.createAlertFromServer(tempSC.isSuccessful(), tempSC.getContext());
                 }
 
             } while (isConnected);
-
+            myClient.close();
         }
         catch (IOException | ClassNotFoundException ex) {
             DeveloperWindow.displayMessage("Error: in ServerListener at run; receiving data");
         }
-
+        
     }
 
     // basic client functions
-    public boolean disconnect() {
-        return false;
+    public void disconnect() {
+        if (isConnected) {
+            isConnected = false;
+            tellServerToDisconnect();
+        }
     }
 
     /**
      * begin outgoing packets
      *
      */
+    public void tellServerToDisconnect() {
+        try {
+            out.writeObject(new Disconnecting());
+            in.close();
+            out.close();
+
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending disconnecting packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+
     public void blockFriend(String friendName) {
 
         try {
@@ -194,11 +225,21 @@ public class ServerListener implements Runnable {
         catch (ClassNotFoundException ex) {
             loginOrRegisterResponse = 0;
         }
-        myClient.close();
-        in.close();
-        out.close();
+        closeIO();
         return loginOrRegisterResponse;
 
+    }
+
+    private void closeIO() {
+        try {
+            myClient.close();
+            in.close();
+            out.close();
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: trying to close IO");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
     }
 
 }

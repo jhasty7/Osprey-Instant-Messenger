@@ -26,7 +26,7 @@ public class ServerInstructions {
     public boolean login(String username, String password) {
         boolean isSuccessful = false;
         // perform login with database (check username/password)
-        String sqlString = processSQLString(SQL_CALLS.Login, username, password, null);
+        String sqlString = processSQLString(SQL_CALLS.Login, username, password);
 
         try {
             ResultSet rs = ExecuteQueryDatabase(sqlString);
@@ -52,7 +52,7 @@ public class ServerInstructions {
      * @return
      */
     public boolean register(String username, String password) {
-        String sqlString = processSQLString(SQL_CALLS.Register, null , null, null);
+        String sqlString = processSQLString(SQL_CALLS.Register, null);
         return ExecuteDatabaseRegisterStoredProcedure(sqlString, username, password);
     }
     
@@ -63,10 +63,7 @@ public class ServerInstructions {
      * @return 
      */
     public boolean addFriend(String username, String friendName){
-        boolean isSuccessful = false;
-        
-        
-        return isSuccessful;
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.AddFriend, username, friendName));
     }
     
     /**
@@ -76,10 +73,7 @@ public class ServerInstructions {
      * @return 
      */
     public boolean removeFriend(String username, String friendName){
-        boolean isSuccessful = false;
-        
-        
-        return isSuccessful;
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.RemoveFriend,username,friendName));
     }
     
     /**
@@ -89,10 +83,7 @@ public class ServerInstructions {
      * @return 
      */
     public boolean setTextStatus(String username, String textStatus){
-        boolean isSuccessful = false;
-        
-        
-        return isSuccessful;
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.UpdateTextStatus,username,textStatus));
     }
     
     /**
@@ -102,10 +93,13 @@ public class ServerInstructions {
      * @return 
      */
     public boolean setOnlineStatus(String username, eONLINE_STATUS onlineStatus){
-        boolean isSuccessful = false;
-        
-        
-        return isSuccessful;
+        int parser;
+        if(onlineStatus == eONLINE_STATUS.online){
+            parser = 1;
+        }else{
+            parser = 0;
+        }
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.UpdateOnlineStatus,username,String.valueOf(parser)));
     }
     
     /**
@@ -115,10 +109,7 @@ public class ServerInstructions {
      * @return 
      */
     public boolean setCurrentStatus(String username, eCURRENT_STATUS currentStatus){
-        boolean isSuccessful = false;
-        
-        
-        return isSuccessful;
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.UpdateCurrentStatus, username, currentStatus.toString()));
     }
     
     /**
@@ -129,7 +120,7 @@ public class ServerInstructions {
     public Friend retrieveClientAsFriend(String username){
         Friend tempFriend = null;
         
-        String sqlString = processSQLString(SQL_CALLS.GetClientAsFriend, username, null, null);
+        String sqlString = processSQLString(SQL_CALLS.GetClientAsFriend, username);
         ResultSet rs = ExecuteQueryDatabase(sqlString);
         try {
             while (rs.next()) {
@@ -155,7 +146,7 @@ public class ServerInstructions {
         
         ArrayList<Friend> tempFriendList = new ArrayList<>();
         
-        String sqlString = processSQLString(SQL_CALLS.GetFriendsList, username, null, null);
+        String sqlString = processSQLString(SQL_CALLS.GetFriendsList, username);
         ResultSet rs = ExecuteQueryDatabase(sqlString);
         
         try {
@@ -184,11 +175,10 @@ public class ServerInstructions {
     public ArrayList<Friend> retrieveOnlyOnlineFriends(String username){
         ArrayList<Friend> tempFriendList = new ArrayList<>();
         
-        String sqlString = processSQLString(SQL_CALLS.GetOnlyOnlineFriends, username, null, null);
+        String sqlString = processSQLString(SQL_CALLS.GetOnlyOnlineFriends, username);
         ResultSet rs = ExecuteQueryDatabase(sqlString);
         
         try {
-            
             while (rs.next()) {
                 tempFriendList.add(new Friend(
                         rs.getString(1),
@@ -262,6 +252,28 @@ public class ServerInstructions {
         
         return isSuccessful;
     }
+        
+    /*
+     * Overloading methods for processSQLString
+    */
+    private String processSQLString(SQL_CALLS calls, String var1){
+        
+        return processSQLString(calls, var1, null, null);
+    }
+    
+    private String processSQLString(SQL_CALLS calls, String var1, String var2){
+        
+        return processSQLString(calls, var1, var2, null);
+    }
+    
+    /**
+     * Gets info and returns the string for SQL command
+     * @param calls
+     * @param var1
+     * @param var2
+     * @param var3
+     * @return 
+     */
 
     private String processSQLString(SQL_CALLS calls, String var1, String var2, String var3) {
         String sqlString;
@@ -273,24 +285,38 @@ public class ServerInstructions {
                         + "' AND password = '" + var2 + "'";
                 break;
             case Register:
-                sqlString = "{ call register_user(?,?,?)}";
+                sqlString = "{ call register_user(?,?)}";
                 break;
             case GetFriendsList:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = no)";
+                        + "WHERE username = friend AND blocked = 0)";
             case GetOnlyOnlineFriends:
                 return "SELECT username, online_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = no) AND online_status = 1";
+                        + "WHERE username = friend AND blocked = 0) AND online_status = 1";
             case GetClientAsFriend:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE username = '" + var1 + "'";
+            case AddFriend:
+                return "INSERT INTO " + var1 + "FL (friend) VALUES ('"
+                        + var2 + "')";
+            case RemoveFriend:
+                return "DELETE FROM " + var1 + "FL WHERE friend = '" + var2 + "'";
+            case UpdateTextStatus:
+                return "UPDATE user_credentials SET text_status = '" + var2
+                        + "' WHERE username = '" + var1 + "'";
+            case UpdateOnlineStatus:
+                return "UPDATE userCredentials SET Online = " + var2
+                        + " WHERE Username = '" + var1 + "'";
+            case UpdateCurrentStatus:
+                return "UPDATE userCredentials SET Status = '" + var2 + "'"
+                        + " WHERE Username = '" + var1 + "'";
             default:
                 sqlString = null;
         }
@@ -306,7 +332,12 @@ public class ServerInstructions {
         Register, 
         GetFriendsList,
         GetOnlyOnlineFriends,
-        GetClientAsFriend
+        GetClientAsFriend,
+        AddFriend,
+        RemoveFriend,
+        UpdateTextStatus,
+        UpdateOnlineStatus,
+        UpdateCurrentStatus
     }
 
 }

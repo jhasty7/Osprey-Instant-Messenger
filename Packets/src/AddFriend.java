@@ -2,7 +2,7 @@
  *
  * @author Joshua
  */
-public class AddFriend {
+public class AddFriend extends Packet{
     
     private String friend;
     

@@ -28,7 +28,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
@@ -37,7 +36,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javax.imageio.ImageIO;
 
 public class MessageWindow extends Application {
     
@@ -401,6 +399,15 @@ public class MessageWindow extends Application {
             writeToLog();
         }
         primaryStage.close();
+    }
+    
+    /**
+     * allows the MainWindow to access the Message window stage
+     * @return 
+     */
+    
+    public Stage getStage(){
+        return primaryStage;
     }
     
 }

@@ -218,14 +218,15 @@ public class Config implements Serializable{
                 cfgfile.createNewFile();
             }
             catch (IOException ex1) {
-                DeveloperWindow.displayMessage("failed to create new config file");
-                DeveloperWindow.displayMessage(ex1.toString());
+                
+                System.err.println("failed to create new config file");
+                System.err.println(ex1.toString());
             }
 
         }
         catch (IOException ex) {
-            DeveloperWindow.displayMessage("failed to open config file");
-            DeveloperWindow.displayMessage(ex.toString());
+            System.err.println("failed to open config file");
+            System.err.println(ex.toString());
         }
     }
 

@@ -153,6 +153,7 @@ public class ClientHandler implements Runnable {
                 serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.offline);
                 clientAsFriend.setOnlineStatus(false);
                 OutgoingPacketHandler.SendFriendUpdateGoingOffline(serverInstructions.retrieveOnlyOnlineFriends(clientsUsername), clientAsFriend);
+                myServer.writeToConsole(clientsUsername + " has disconnected. Removing from the list and closing thread.");
             }
             else {
                 //packet deserialization problem
