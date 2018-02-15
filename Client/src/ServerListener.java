@@ -43,6 +43,7 @@ public class ServerListener implements Runnable {
             myMainWindow.setFriendsList(tempFriendsList);
             //after this will just wait for new packets from the server
             do {
+                
                 Object obj;
                 obj = in.readObject();
 
@@ -64,6 +65,7 @@ public class ServerListener implements Runnable {
         }
         catch (IOException | ClassNotFoundException ex) {
             DeveloperWindow.displayMessage("Error: in ServerListener at run; receiving data");
+            DeveloperWindow.displayMessage(ex.toString());
         }
 
     }

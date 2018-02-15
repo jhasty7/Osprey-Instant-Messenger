@@ -67,7 +67,7 @@ public class FriendsList implements Serializable {
             int i;
             for (i = 0; i < onlineFriends.size(); i++) {
                 tempList.add(onlineFriends.get(i).getUsername() + " - "
-                        + onlineFriends.get(i).getCurrentStatus() + " - " + onlineFriends.get(i).setTextStatus());
+                        + onlineFriends.get(i).getCurrentStatus() + " - " + onlineFriends.get(i).getTextStatus());
             }
 
             return tempList;

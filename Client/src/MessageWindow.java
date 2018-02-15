@@ -408,7 +408,7 @@ public class MessageWindow extends Application {
     /**
      * closes chat window
      */
-    private void closeChatWindow(){
+    public void closeChatWindow(){
         if(Config.cfg.isAutoSaveLogs()){
             writeToLog();
         }

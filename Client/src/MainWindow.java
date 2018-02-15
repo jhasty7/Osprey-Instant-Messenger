@@ -1,6 +1,9 @@
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -45,11 +48,12 @@ public class MainWindow extends Application {
 
     // very important variables/objects
     private FriendsList myFriendsList;
-    private eCURRENT_STATUS myStatus = eCURRENT_STATUS.available;
-    private String myTextStatus;
-    public static ArrayList<MessageWindow> myChatWindows;
+    public static ArrayList<MessageWindow> myMessageWindows;
     private ServerListener serverListener;
     public static String username;
+
+    // extra variables/objects for niche functionality
+    private String myTextStatus;
 
     // javafx ui variables/objects
     private Stage primaryStage;
@@ -85,11 +89,11 @@ public class MainWindow extends Application {
     private MenuItem removeOfflineFriend;
     private MenuItem blockOfflineFriend;
 
-    public MainWindow(String username) {
+    public MainWindow(String usernameTemp) {
         dummyStringList = new ArrayList<>();
         dummyStringList.add(new Friend("", false, null, ""));
-        myChatWindows = new ArrayList<>();
-        this.username = username;
+        myMessageWindows = new ArrayList<>();
+        username = usernameTemp;
         // establish lasting connection to the server
         serverListener = new ServerListener(this);
         new Thread(serverListener).start();
@@ -118,19 +122,13 @@ public class MainWindow extends Application {
         statusHBox.getChildren().addAll(availableButton, awayButton, busyButton);
         /* statusHBox button listeners */
         availableButton.setOnAction(e -> {
-            myStatus = eCURRENT_STATUS.available;
-            statusRectangle.setFill(Color.LIGHTGREEN);
-            buttonDisabler();
+            currentStatusChanger(eCURRENT_STATUS.available, true);
         });
         awayButton.setOnAction(e -> {
-            myStatus = eCURRENT_STATUS.away;
-            statusRectangle.setFill(Color.YELLOW);
-            buttonDisabler();
+            currentStatusChanger(eCURRENT_STATUS.away, true);
         });
         busyButton.setOnAction(e -> {
-            myStatus = eCURRENT_STATUS.busy;
-            statusRectangle.setFill(Color.RED);
-            buttonDisabler();
+            currentStatusChanger(eCURRENT_STATUS.busy, true);
         });
 
         /* menu bars and items */
@@ -246,24 +244,26 @@ public class MainWindow extends Application {
     }
 
     /*
-     * disables status buttons accordingly
+     * changes status color
      */
-    private void buttonDisabler() {
-        serverListener.updateCurrentStatus(myStatus);
-        switch (myStatus) {
+    private void currentStatusChanger(eCURRENT_STATUS currentStatus, boolean sendToServer) {
+        switch (currentStatus) {
             case available:
+                statusRectangle.setFill(Color.LIGHTGREEN);
                 availableButton.setDisable(true);
                 awayButton.setDisable(false);
                 busyButton.setDisable(false);
                 onlineFriendsListLabel.requestFocus();
                 break;
             case away:
+                statusRectangle.setFill(Color.YELLOW);
                 availableButton.setDisable(false);
                 awayButton.setDisable(true);
                 busyButton.setDisable(false);
                 onlineFriendsListLabel.requestFocus();
                 break;
             case busy:
+                statusRectangle.setFill(Color.RED);
                 availableButton.setDisable(false);
                 awayButton.setDisable(false);
                 busyButton.setDisable(true);
@@ -271,14 +271,15 @@ public class MainWindow extends Application {
                 break;
             default:
         }
-
+        if (sendToServer) {
+            serverListener.updateCurrentStatus(currentStatus);
+        }
     }
 
     /*
      * exiting the program
      */
     private void exit() {
-        Config.cfg.writeConfigFile();
         closeAllWindows();
         serverListener.disconnect();
         primaryStage.close();
@@ -300,7 +301,9 @@ public class MainWindow extends Application {
      * close all chat windows
      */
     private void closeAllWindows() {
-
+        myMessageWindows.forEach((temp) -> {
+            temp.closeChatWindow();
+        });
     }
 
     /*
@@ -391,14 +394,8 @@ public class MainWindow extends Application {
             super.updateItem(item, empty);
 
             if (item != null) {
-                if (item.getUsername().equals("")) {
-                    setText("");
-                    setDisable(true);
-                }
-                else {
-                    setText(item.getUsername());
-                    setDisable(false);
-                }
+                setText(item.getUsername());
+                setDisable(false);
             }
             else {
                 setText("");
@@ -424,14 +421,8 @@ public class MainWindow extends Application {
             super.updateItem(item, empty);
 
             if (item != null) {
-                if (item.getUsername().equals("")) {
-                    setText("");
-                    setDisable(true);
-                }
-                else {
-                    setText(item.getUsername());
-                    setDisable(false);
-                }
+                setText(item.getUsername());
+                setDisable(false);
             }
             else {
                 setText("");
@@ -449,10 +440,10 @@ public class MainWindow extends Application {
         boolean foundWindow = false;
         if (onlineFriendsListView.getSelectionModel().getSelectedItem() != null) {
             mySelection = ((Friend) onlineFriendsListView.getSelectionModel().getSelectedItem()).getUsername();
-            if (!myChatWindows.isEmpty()) {
+            if (!myMessageWindows.isEmpty()) {
 
                 // does window exist already
-                for (MessageWindow window : myChatWindows) {
+                for (MessageWindow window : myMessageWindows) {
                     if (window.getFriendName().equals(mySelection)) {
                         // if you found a window, this means the user is clicking
                         // to open an already opened chat window. just request focus.
@@ -463,14 +454,14 @@ public class MainWindow extends Application {
                 // if you didn't find the window create one
                 if (!foundWindow) {
                     MessageWindow newWindow = new MessageWindow(mySelection, serverListener);
-                    myChatWindows.add(newWindow);
+                    myMessageWindows.add(newWindow);
                     newWindow.start(new Stage());
                 }
             }
             // this list was empty
             else {
                 MessageWindow newWindow = new MessageWindow(mySelection, serverListener);
-                myChatWindows.add(newWindow);
+                myMessageWindows.add(newWindow);
                 newWindow.start(new Stage());
             }
         }
@@ -484,10 +475,10 @@ public class MainWindow extends Application {
             String friendName = textMessage.getComingFrom();
             boolean foundWindow = false;
 
-            if (!myChatWindows.isEmpty()) {
+            if (!myMessageWindows.isEmpty()) {
 
                 // does window exist already
-                for (MessageWindow window : myChatWindows) {
+                for (MessageWindow window : myMessageWindows) {
                     if (window.getFriendName().equals(friendName)) {
                         // find window, display message, and request focus
                         window.displayIncomingText(textMessage);
@@ -498,7 +489,7 @@ public class MainWindow extends Application {
                 // if window wasn't found, open up new window
                 if (!foundWindow) {
                     MessageWindow newWindow = new MessageWindow(friendName, serverListener);
-                    myChatWindows.add(newWindow);
+                    myMessageWindows.add(newWindow);
                     newWindow.start(new Stage());
                     newWindow.displayIncomingText(textMessage);
                 }
@@ -506,7 +497,7 @@ public class MainWindow extends Application {
             // if the list was empty
             else {
                 MessageWindow newWindow = new MessageWindow(friendName, serverListener);
-                myChatWindows.add(newWindow);
+                myMessageWindows.add(newWindow);
                 newWindow.start(new Stage());
                 newWindow.displayIncomingText(textMessage);
             }
@@ -720,7 +711,16 @@ public class MainWindow extends Application {
 
     public void processFriend(Friend friend) {
         javafx.application.Platform.runLater(() -> {
-            if (friend.isAdd()) {
+            if (friend.isUpdate()) {
+                this.myFriendsList.updateFriend(friend);
+                updateFriendsListGUI();
+            }
+            else if (friend.isYourself()) {
+                currentStatusChanger(friend.getCurrentStatus(), false);
+                myTextStatus = friend.getTextStatus();
+                statusTextField.setText(myTextStatus);
+            }
+            else if (friend.isAdd()) {
                 this.myFriendsList.addFriend(friend);
                 updateFriendsListGUI();
             }
@@ -729,10 +729,6 @@ public class MainWindow extends Application {
             }
             else if (friend.isRemove()) {
 
-            }
-            else if (friend.isUpdate()) {
-                this.myFriendsList.updateFriend(friend);
-                updateFriendsListGUI();
             }
         });
     }

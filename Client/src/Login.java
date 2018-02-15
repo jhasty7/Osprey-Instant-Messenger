@@ -41,7 +41,6 @@ import javafx.util.Pair;
 
 public class Login extends Application {
     
-    
     private GridPane loginPane;
     private BorderPane masterPane;
     private TextField username;
@@ -65,7 +64,7 @@ public class Login extends Application {
     private HBox bottomHBox;
     
     private ServerListener serverListener;
-
+    
     @Override
     public void start(Stage primaryStage) {
         /*
@@ -78,26 +77,28 @@ public class Login extends Application {
         username.setPromptText("Click");
         password = new PasswordField();
         password.setPromptText("Password");
-        
+
         //michelle tryin useless stuff
         loginPane.setPadding(new Insets(10, 10, 10, 10));
         loginPane.setHgap(3);
-        
+
         //menu bar
         mainMenuBar = new MenuBar();
         mainMenuBar.setId("login-mainmenubar");
         optionsMenu = new Menu("Options");
         settingsMenuItem = new MenuItem("Settings");
+        settingsMenuItem.setOnAction(new SettingsMenuItemActionListener());
         exitMenuItem = new MenuItem("Exit");
-        optionsMenu.getItems().addAll(settingsMenuItem,exitMenuItem);
+        exitMenuItem.setOnAction(new ExitMenuItemActionListener());
+        optionsMenu.getItems().addAll(settingsMenuItem, exitMenuItem);
         mainMenuBar.getMenus().add(optionsMenu);
-        
+
         // other stuff
         usernameLabel = new Label("Username");
         passwordLabel = new Label("Password");
         usernameLabel.setId("login-labels");
         passwordLabel.setId("login-labels");
-
+        
         rememberUsernamePassword = new CheckBox("Remember");
         rememberUsernamePassword.setId("cb");
         
@@ -108,19 +109,19 @@ public class Login extends Application {
         this.primaryStage = primaryStage;
         loginLogo.setOpacity(10);
         login.setDisable(true);
-        
+
         // bottom hbox
         bottomHBox.getChildren().add(registerButton);
         bottomHBox.setAlignment(Pos.BOTTOM_LEFT);
         bottomHBox.setPadding(new Insets(10, 10, 10, 10));
-        
+
         // column, row
         loginPane.add(usernameLabel, 0, 0);
         loginPane.add(username, 1, 0);
         loginPane.add(passwordLabel, 0, 1);
         loginPane.add(password, 1, 1);
         loginPane.add(login, 2, 0);
-        loginPane.add(rememberUsernamePassword,1,3);
+        loginPane.add(rememberUsernamePassword, 1, 3);
         loginPane.setAlignment(Pos.CENTER_RIGHT);
         
         password.setOnKeyPressed(new PasswordKeyListener());
@@ -138,8 +139,10 @@ public class Login extends Application {
         primaryStage.getIcons().add(new Image("unf_icon.png"));
         primaryStage.setResizable(false);
         primaryStage.setTitle("UNF Instant Messenger");
-        
         primaryStage.setScene(scene);
+        primaryStage.setOnCloseRequest(e -> {
+            exit();
+        });
         
         primaryStage.show();
         login.requestFocus();
@@ -147,13 +150,13 @@ public class Login extends Application {
         applyConfiguration();
     }
     
-    private void applyConfiguration(){
+    private void applyConfiguration() {
         rememberUsernamePassword.setSelected(Config.cfg.isRememberUsernamePassword());
-        if(rememberUsernamePassword.isSelected()){
-            if(Config.cfg.getUsername() != null && Config.cfg.getPassword() != null){
+        if (rememberUsernamePassword.isSelected()) {
+            if (Config.cfg.getUsername() != null && Config.cfg.getPassword() != null) {
                 username.setText(Config.cfg.getUsername());
                 password.setText(Config.cfg.getPassword());
-                if(Config.cfg.isAutoLogin()){
+                if (Config.cfg.isAutoLogin()) {
                     attemptToLogin();
                 }
             }
@@ -163,9 +166,9 @@ public class Login extends Application {
     /* login validation */
     private void attemptToLogin() {
         lockLoginUI(true);
-
+        
         if (!username.getText().equals("") && username.getText() != null && password.getText() != null && !password.getText().matches("^\\s*$")) {
-
+            
             serverListener = new ServerListener();
             // connect to the server and send login packet
             try {
@@ -176,11 +179,11 @@ public class Login extends Application {
                 DeveloperWindow.displayMessage(ex.toString());
                 processLoginOrRegisterResponse(2);
             }
-
+            
         }
-
+        
     }
-
+    
     private void processLoginOrRegisterResponse(int response) {
         Alert alert;
         switch (response) {
@@ -208,10 +211,10 @@ public class Login extends Application {
             case 2:
                 password.clear();
                 username.clear();
-                
+
                 // this checks if the user just newly clicked "Remember" and failed the login.
                 // it unchecks remember.
-                if(!Config.cfg.isRememberUsernamePassword() && rememberUsernamePassword.isSelected()){
+                if (!Config.cfg.isRememberUsernamePassword() && rememberUsernamePassword.isSelected()) {
                     rememberUsernamePassword.setSelected(false);
                 }
                 // god damn wtf did i do
@@ -257,7 +260,7 @@ public class Login extends Application {
      * clicking the register button
      */
     private class RegisterButtonListener implements EventHandler<ActionEvent> {
-
+        
         @Override
         public void handle(ActionEvent event) {
             password.clear();
@@ -287,38 +290,38 @@ public class Login extends Application {
             Dialog<Pair<String, String>> dialog = new Dialog<>();
             dialog.setTitle("Register");
             dialog.setHeaderText("Type in a unique username and complex password");
-
+            
             ButtonType loginButtonType = new ButtonType("Regiser", ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
-
+            
             GridPane grid = new GridPane();
             grid.setHgap(10);
             grid.setVgap(10);
             grid.setPadding(new Insets(20, 150, 10, 10));
-
+            
             PasswordField password = new PasswordField();
             password.setPromptText("Password");
             PasswordFieldKeyListener passwordListener = new PasswordFieldKeyListener();
             passwordListener.setTextFieldReference(password);
             password.focusedProperty().addListener(passwordListener);
-
+            
             PasswordField retypePassword = new PasswordField();
             retypePassword.setPromptText("Retype Password");
-
+            
             grid.add(new Label("Username:"), 0, 0);
             grid.add(username, 1, 0);
             grid.add(new Label("Password:"), 0, 1);
             grid.add(password, 1, 1);
             grid.add(new Label("Re-Type Password:"), 0, 2);
             grid.add(retypePassword, 1, 2);
-
+            
             Node loginButton = dialog.getDialogPane().lookupButton(loginButtonType);
             loginButton.setDisable(true);
-
+            
             password.textProperty().addListener((observable, oldValue, newValue) -> {
                 loginButton.setDisable(newValue.trim().isEmpty());
             });
-
+            
             dialog.getDialogPane().setContent(grid);
             username.requestFocus();
 
@@ -329,9 +332,9 @@ public class Login extends Application {
                 }
                 return null;
             });
-
+            
             Optional<Pair<String, String>> result = dialog.showAndWait();
-
+            
             result.ifPresent(usernamePassword -> {
                 registrationUserName = username.getText();
                 String tempPass;
@@ -364,18 +367,18 @@ public class Login extends Application {
                     handle(event);
                 }
             });
-
+            
         }
-
+        
     }
 
     /*
      * password registration input validation
      */
     private class UsernameFieldKeyListener implements ChangeListener<Boolean> {
-
+        
         private TextField username;
-
+        
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (newValue) {
@@ -414,20 +417,20 @@ public class Login extends Application {
                 }
             }
         }
-
+        
         public void setTextFieldReference(TextField tf) {
             username = tf;
         }
-
+        
     }
 
     /*
      * password registration input validation
      */
     private class PasswordFieldKeyListener implements ChangeListener<Boolean> {
-
+        
         private TextField password;
-
+        
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (newValue) {
@@ -466,42 +469,42 @@ public class Login extends Application {
                 }
             }
         }
-
+        
         public void setTextFieldReference(TextField tf) {
             password = tf;
         }
-
+        
     }
 
     /*
      * clicking the login button
      */
     private class LoginButtonListener implements EventHandler<ActionEvent> {
-
+        
         @Override
         public void handle(ActionEvent event) {
             attemptToLogin();
         }
-
+        
     }
 
     /*
      * clicking the exit button
      */
     private class ExitButtonListener implements EventHandler<ActionEvent> {
-
+        
         @Override
         public void handle(ActionEvent event) {
             exit();
         }
-
+        
     }
 
     /*
      * pressing enter while password text field is focused
      */
     private class PasswordKeyListener implements EventHandler<KeyEvent> {
-
+        
         @Override
         public void handle(KeyEvent event) {
             if (password.getText() != null && !password.getText().matches("^\\s*$")) {
@@ -515,7 +518,25 @@ public class Login extends Application {
                 login.setDisable(true);
             }
         }
+        
+    }
+    
+    private class SettingsMenuItemActionListener implements EventHandler<ActionEvent> {
 
+        @Override
+        public void handle(ActionEvent event) {
+            Settings settingsWindow = new Settings();
+            settingsWindow.start(new Stage());
+        }
+        
+    }
+    
+    private class ExitMenuItemActionListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            exit();
+        }
     }
 
     /* locks and unlocks sensitive UI components */
@@ -535,9 +556,8 @@ public class Login extends Application {
             optionsMenu.setDisable(false);
         }
     }
-
+    
     private void exit() {
-        Config.cfg.writeConfigFile();
         primaryStage.close();
         Platform.exit();
         System.exit(0);
@@ -545,7 +565,7 @@ public class Login extends Application {
 
     // this is the ugliest thing ive ever done
     private class SleepForLoginEnable implements Runnable {
-
+        
         @Override
         public void run() {
             try {

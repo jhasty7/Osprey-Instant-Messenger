@@ -24,6 +24,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -221,6 +222,7 @@ public class Settings extends Application {
         primaryStage.setTitle("Settings");
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(new ClosingPrimaryStageWindowEventHandler());
+        primaryStage.initModality(Modality.APPLICATION_MODAL);
         applyConfiguration();
         // show window
         primaryStage.show();
@@ -312,6 +314,7 @@ public class Settings extends Application {
             }
             
             setConfiguation();
+            Config.cfg.writeConfigFile();
             primaryStage.close();
         }
     }

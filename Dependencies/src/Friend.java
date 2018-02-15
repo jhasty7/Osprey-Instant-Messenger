@@ -11,6 +11,7 @@ public class Friend implements Serializable{
     private boolean isAdd = false;
     private boolean isRemove = false;
     private boolean isBlock = false;
+    private boolean isYourself = false;
     
     public Friend(){
         username = null;
@@ -45,8 +46,16 @@ public class Friend implements Serializable{
             return eONLINE_STATUS.offline;
         }
     }
+
+    public boolean isYourself() {
+        return isYourself;
+    }
+
+    public void setIsYourself(boolean isYourself) {
+        this.isYourself = isYourself;
+    }
     
-    public String setTextStatus(){
+    public String getTextStatus(){
         return textStatus;
     }
     

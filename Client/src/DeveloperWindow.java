@@ -12,6 +12,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 /**
  *
@@ -68,6 +70,7 @@ public class DeveloperWindow extends Application {
         
         primaryStage.setTitle("Developer Window");
         primaryStage.setScene(new Scene(flowPane, 600, 600));
+        primaryStage.setOnCloseRequest(new StopCloseButtonActionListener());
         primaryStage.show();
         
         displayMessage("This is the developer window.\n"
@@ -125,6 +128,13 @@ public class DeveloperWindow extends Application {
         public void handle(ActionEvent event){
             Settings settings = new Settings();
             settings.start(new Stage());
+        }
+    }
+    
+    private class StopCloseButtonActionListener implements EventHandler<WindowEvent>{
+        @Override
+        public void handle(WindowEvent event){
+            event.consume();
         }
     }
 

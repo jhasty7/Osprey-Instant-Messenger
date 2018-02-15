@@ -166,11 +166,18 @@ public class ServerInstructions {
         ResultSet rs = ExecuteQueryDatabase(sqlString);
 
         try {
-
+            
             while (rs.next()) {
+                boolean temp;
+                if (rs.getString(2).equals("1")) {
+                    temp = true;
+                }
+                else {
+                    temp = false;
+                }
                 tempFriendList.add(new Friend(
                         rs.getString(1),
-                        Boolean.parseBoolean(rs.getString(2)),
+                        temp,
                         eCURRENT_STATUS.valueOf(rs.getString(3)),
                         rs.getString(4)));
             }
@@ -197,15 +204,23 @@ public class ServerInstructions {
 
         try {
             while (rs.next()) {
+                boolean temp;
+                if (rs.getString(2).equals("1")) {
+                    temp = true;
+                }
+                else {
+                    temp = false;
+                }
                 tempFriendList.add(new Friend(
                         rs.getString(1),
-                        Boolean.parseBoolean(rs.getString(2)),
+                        temp,
                         eCURRENT_STATUS.valueOf(rs.getString(3)),
                         rs.getString(4)));
             }
         }
         catch (SQLException e) {
             myServer.writeToConsole("Error generating friends list for " + username + "\n");
+            myServer.writeToConsole(e.toString());
         }
         return tempFriendList;
     }
@@ -311,7 +326,7 @@ public class ServerInstructions {
                         + "FROM " + var1 + "FL\n"
                         + "WHERE username = friend AND blocked = 0)";
             case GetOnlyOnlineFriends:
-                return "SELECT username, online_status\n"
+                return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"

@@ -4,6 +4,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  *
@@ -11,7 +14,7 @@ import java.util.ArrayList;
  */
 public class ClientHandler implements Runnable {
 
-    public static ArrayList<User> connectedUsers = new ArrayList<>();
+    public static List<User> connectedUsers = new CopyOnWriteArrayList<User>();
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private boolean remainsListening = false;
@@ -139,7 +142,7 @@ public class ClientHandler implements Runnable {
 
                 TextStatus textStatus = (TextStatus) obj;
                 clientAsFriend.setTextStatus(textStatus.getTextStatus());
-                OutgoingPacketHandler.SendConfirmation(out, serverInstructions.setTextStatus(clientsUsername, textStatus.getTextStatus()), "StatusText");
+                serverInstructions.setTextStatus(clientsUsername, textStatus.getTextStatus());
 
             }
             else if (obj.getClass().equals(OnlineStatus.class)) {
@@ -159,16 +162,16 @@ public class ClientHandler implements Runnable {
             else if (obj.getClass().equals(Disconnecting.class)) {
                 remainsListening = false;
                 serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.offline);
-                clientAsFriend.setOnlineStatus(false);
                 OutgoingPacketHandler.SendFriendUpdateGoingOffline(serverInstructions.retrieveOnlyOnlineFriends(clientsUsername), clientAsFriend);
                 myServer.writeToConsole(clientsUsername + " has disconnected. Removing from the list and closing thread.");
+                dropConnection();
             }
             else {
                 //packet deserialization problem
                 remainsListening = false;
             }
         } while (remainsListening);
-        dropConnection();
+        //dropConnection();
     }
 
     private void dropConnection() throws IOException {
