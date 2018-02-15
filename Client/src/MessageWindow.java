@@ -25,6 +25,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
@@ -53,9 +54,13 @@ public class MessageWindow extends Application {
     private Menu friendMenuItem;
     private CheckMenuItem ignoreTextMenuItem;
     private MenuItem blockFriendMenuItem;
+    private MenuItem exitConvoMenuItem;
+    private MenuItem settingsMenuItem;
+    private Menu other;
     private TextFlow textFlow;
     private ScrollPane textFlowScrollPane;
     private VBox textFlowVBox;
+    private BorderPane controlHBox;
     private boolean manualScrolling = false;
     
     public MessageWindow(String friendName, ServerListener serverListener) {
@@ -76,18 +81,24 @@ public class MessageWindow extends Application {
         mainMenuBar = new MenuBar();
         mainMenuBar.prefWidthProperty().bind(pane.widthProperty());
         friendMenuItem = new Menu("Friend");
+        other = new Menu("Conversation");
         ignoreTextMenuItem = new CheckMenuItem("Ignore Font/Color");
         blockFriendMenuItem = new MenuItem("Block");
+        exitConvoMenuItem = new MenuItem("Exit Conversation");
+        settingsMenuItem = new MenuItem("Settings");
+        exitConvoMenuItem.setOnAction(new CloseWindowButtonListener());
         blockFriendMenuItem.setOnAction(new BlockFriendMenuItemListener());
+        settingsMenuItem.setOnAction(new SettingsMenuItemListener());
         friendMenuItem.getItems().addAll(ignoreTextMenuItem,
                 blockFriendMenuItem);
-        mainMenuBar.getMenus().add(friendMenuItem);
+        other.getItems().addAll(settingsMenuItem, exitConvoMenuItem);
+        mainMenuBar.getMenus().addAll(friendMenuItem, other);
         
         // text areas and buttons
         inputTextArea = new TextArea("");
         sendMessageButton = new Button("Send");
         closeWindowButton = new Button("Close");
-        sendImageButton = new Button("Image");
+        sendImageButton = new Button("+");
         textFlow = new TextFlow();
         textFlowScrollPane = new ScrollPane();
         textFlowVBox = new VBox();
@@ -106,11 +117,11 @@ public class MessageWindow extends Application {
         textFlow.setPadding(new Insets(0,10,0,10));
         
         //
-        
+        controlHBox = new BorderPane();
         /* various component listeners */
         sendMessageButton.setOnAction(new SendButtonActionListener());
         inputTextArea.setOnKeyPressed(new InputTextAreaKeyListener());
-        closeWindowButton.setOnAction(new CloseWindowButtonListener());
+        //closeWindowButton.setOnAction(new CloseWindowButtonListener());
         sendImageButton.setOnAction(new AttatchImageListener());
         primaryStage.heightProperty().addListener(p -> {
             textFlowVBox.setPrefHeight(primaryStage.getHeight() - 200);
@@ -120,6 +131,8 @@ public class MessageWindow extends Application {
             inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
         });
         
+        controlHBox.setTop(sendImageButton);
+        controlHBox.setBottom(sendMessageButton);
         
         
         pane.setPrefSize(350.0, 350.0);
@@ -128,9 +141,10 @@ public class MessageWindow extends Application {
         pane.getChildren().add(mainMenuBar);
         pane.getChildren().add(textFlowVBox);
         pane.getChildren().add(inputTextArea);
-        pane.getChildren().add(sendMessageButton);
-        pane.getChildren().add(sendImageButton);
-        pane.getChildren().add(closeWindowButton);
+        pane.getChildren().add(controlHBox);
+        //pane.getChildren().add(sendMessageButton);
+       //pane.getChildren().add(sendImageButton);
+        //pane.getChildren().add(closeWindowButton);
         
         Scene scene = new Scene(pane, 350, 350);
         
@@ -192,6 +206,17 @@ public class MessageWindow extends Application {
         public void handle(ActionEvent event) {
             if (inputTextArea.getText() != null) {
                 closeChatWindow();
+            }
+        }
+
+    }
+    class SettingsMenuItemListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            if (inputTextArea.getText() != null) {
+                Settings settings = new Settings();
+                settings.start(new Stage());
             }
         }
 
