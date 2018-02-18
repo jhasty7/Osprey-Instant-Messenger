@@ -1,2 +1,0 @@
--Wait for database to be created
-	-Verify login packet with database record
