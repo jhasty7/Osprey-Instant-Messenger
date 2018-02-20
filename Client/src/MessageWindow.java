@@ -389,10 +389,10 @@ public class MessageWindow extends Application {
                         DeveloperWindow.displayMessage("Error: in message window class at attachImage; cannot ImageIO.read");
                         DeveloperWindow.displayMessage(ex.toString());
                     }
+                    break;
                 default:
                     // if file
-                    //sendFile(file);
-                    displayIncomingFileDownloadPrompt(new SendFilePacket(MainWindow.username, friendName, file));
+                    sendFile(file);
             }
 
         }
