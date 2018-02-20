@@ -18,6 +18,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -47,6 +48,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Hyperlink;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
@@ -59,7 +61,6 @@ public class MessageWindow extends Application {
     private String friendName;
     private TextArea inputTextArea;
     private Button sendMessageButton;
-    private Button closeWindowButton;
     private Button sendImageButton;
     private Stage primaryStage;
     private StringProperty messageLog = new SimpleStringProperty();
@@ -110,12 +111,12 @@ public class MessageWindow extends Application {
         // text areas and buttons
         inputTextArea = new TextArea("");
         sendMessageButton = new Button("Send");
-        closeWindowButton = new Button("Close");
         sendImageButton = new Button("+");
         textFlow = new TextFlow();
         textFlowScrollPane = new ScrollPane();
         textFlowVBox = new VBox();
         textFlowVBox.getChildren().addAll(textFlowScrollPane, textFlow);
+        textFlow.setLineSpacing(10);
         VBox.setVgrow(textFlowScrollPane, Priority.ALWAYS);
         textFlowScrollPane.setContent(textFlow);
         textFlowScrollPane.vvalueProperty().addListener(new TextFlowScrollPaneVerticalPropertyListener());
@@ -143,6 +144,14 @@ public class MessageWindow extends Application {
             inputTextArea.setMaxWidth(primaryStage.getWidth() - 220);
             inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
         });
+        textFlow.getChildren().addListener(
+                (ListChangeListener<Node>) ((Change) -> {
+                    if (!manualScrolling) {
+                        textFlow.layout();
+                        textFlowScrollPane.layout();
+                        textFlowScrollPane.setVvalue(1.0f);
+                    }
+                }));
 
         controlHBox.setTop(sendImageButton);
         controlHBox.setBottom(sendMessageButton);
@@ -154,9 +163,6 @@ public class MessageWindow extends Application {
         pane.getChildren().add(textFlowVBox);
         pane.getChildren().add(inputTextArea);
         pane.getChildren().add(controlHBox);
-        //pane.getChildren().add(sendMessageButton);
-        //pane.getChildren().add(sendImageButton);
-        //pane.getChildren().add(closeWindowButton);
 
         Scene scene = new Scene(pane, 350, 350);
 
@@ -182,7 +188,7 @@ public class MessageWindow extends Application {
     /*
      * when the block friend menu item is clicked
      */
-    class BlockFriendMenuItemListener implements EventHandler<ActionEvent> {
+    private class BlockFriendMenuItemListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -194,7 +200,7 @@ public class MessageWindow extends Application {
     /*
      * when the send button is pressed
      */
-    class SendButtonActionListener implements EventHandler<ActionEvent> {
+    private class SendButtonActionListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -211,7 +217,7 @@ public class MessageWindow extends Application {
     /*
      * when the close button is pressed
      */
-    class CloseWindowButtonListener implements EventHandler<ActionEvent> {
+    private class CloseWindowButtonListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -222,7 +228,7 @@ public class MessageWindow extends Application {
 
     }
 
-    class SettingsMenuItemListener implements EventHandler<ActionEvent> {
+    private class SettingsMenuItemListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
@@ -235,13 +241,12 @@ public class MessageWindow extends Application {
     }
 
     //More dumb Michelle stuff
-    class AttatchImageListener implements EventHandler<ActionEvent> {
+    private class AttatchImageListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
             if (inputTextArea.getText() != null) {
-
-                attatchImage();
+                attachFile();
             }
         }
 
@@ -251,7 +256,7 @@ public class MessageWindow extends Application {
     /*
      * when the enter button is pressed while the input text area has focus
      */
-    class InputTextAreaKeyListener implements EventHandler<KeyEvent> {
+    private class InputTextAreaKeyListener implements EventHandler<KeyEvent> {
 
         @Override
         public void handle(KeyEvent event) {
@@ -279,11 +284,16 @@ public class MessageWindow extends Application {
     /*
      * text flow scroll pane property listener (auto scrolling)
      */
-    class TextFlowScrollPaneVerticalPropertyListener implements ChangeListener<Object> {
+    private class TextFlowScrollPaneVerticalPropertyListener implements ChangeListener<Object> {
 
         @Override
         public void changed(ObservableValue<? extends Object> observable, Object oldValue, Object newValue) {
-            //add more scrolling rules here
+            textFlowScrollPane.layout();
+            if(textFlowScrollPane.getVvalue() != 1.0){
+                manualScrolling = true;
+            }else{
+                manualScrolling = false;
+            }
         }
 
     }
@@ -306,9 +316,6 @@ public class MessageWindow extends Application {
             newText.setFill(textMessage.getColor());
         }
         textFlow.getChildren().add(newText);
-        if (!manualScrolling) {
-            textFlowScrollPane.setVvalue(1.0);
-        }
     }
 
     void displayMyText(MessagePacket textMessage) {
@@ -319,18 +326,14 @@ public class MessageWindow extends Application {
         Text newText = new Text(message);
         newText.setFill(textMessage.getColor());
         newText.setFont(textMessage.getFontAsFont());
+        
         textFlow.getChildren().add(newText);
-
-        if (!manualScrolling) {
-            textFlowScrollPane.setVvalue(1.0);
-        }
-
     }
 
     /*
      * when the X button is clicked on the window
      */
-    class clickedXToClose implements EventHandler<WindowEvent> {
+    private class clickedXToClose implements EventHandler<WindowEvent> {
 
         @Override
         public void handle(WindowEvent event) {
@@ -355,15 +358,8 @@ public class MessageWindow extends Application {
 
     }
 
-    /*
-     * send file to friend
-     */
-    private void sendFile(Object obj) {
-
-    }
-
     //Michelle does more stupid stuff
-    private void attatchImage() {
+    private void attachFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
 
