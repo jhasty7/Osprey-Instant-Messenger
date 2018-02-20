@@ -1,9 +1,6 @@
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -470,7 +467,7 @@ public class MainWindow extends Application {
     /*
      * incoming message to open message window
      */
-    public void incomingMessage(Message textMessage) {
+    public void incomingMessage(MessagePacket textMessage) {
         javafx.application.Platform.runLater(() -> {
             String friendName = textMessage.getComingFrom();
             boolean foundWindow = false;
@@ -500,6 +497,77 @@ public class MainWindow extends Application {
                 myMessageWindows.add(newWindow);
                 newWindow.start(new Stage());
                 newWindow.displayIncomingText(textMessage);
+            }
+        });
+    }
+
+    /*
+     * overloaded incomingMessage with ImagePacket
+     */
+    public void incomingMessage(ImagePacket ip) {
+        javafx.application.Platform.runLater(() -> {
+            String friendName = ip.getComingFrom();
+            boolean foundWindow = false;
+
+            if (!myMessageWindows.isEmpty()) {
+
+                // does window exist already
+                for (MessageWindow window : myMessageWindows) {
+                    if (window.getFriendName().equals(friendName)) {
+                        // find window, display message, and request focus
+                        window.displayIncomingImage(ip);
+                        window.getStage().requestFocus();
+                        foundWindow = true;
+                    }
+                }
+                // if window wasn't found, open up new window
+                if (!foundWindow) {
+                    MessageWindow newWindow = new MessageWindow(friendName, serverListener);
+                    myMessageWindows.add(newWindow);
+                    newWindow.start(new Stage());
+                    newWindow.displayIncomingImage(ip);
+                }
+            }
+            // if the list was empty
+            else {
+                MessageWindow newWindow = new MessageWindow(friendName, serverListener);
+                myMessageWindows.add(newWindow);
+                newWindow.start(new Stage());
+                newWindow.displayIncomingImage(ip);
+            }
+        });
+    }
+
+    public void incomingMessage(SendFilePacket sfp) {
+        javafx.application.Platform.runLater(() -> {
+            String friendName = sfp.getComingFrom();
+            boolean foundWindow = false;
+
+            if (!myMessageWindows.isEmpty()) {
+
+                // does window exist already
+                for (MessageWindow window : myMessageWindows) {
+                    if (window.getFriendName().equals(friendName)) {
+                        // find window, display message, and request focus
+                        window.displayIncomingFileDownloadPrompt(sfp);
+                        window.getStage().requestFocus();
+                        foundWindow = true;
+                    }
+                }
+                // if window wasn't found, open up new window
+                if (!foundWindow) {
+                    MessageWindow newWindow = new MessageWindow(friendName, serverListener);
+                    myMessageWindows.add(newWindow);
+                    newWindow.start(new Stage());
+                    newWindow.displayIncomingFileDownloadPrompt(sfp);
+                }
+            }
+            // if the list was empty
+            else {
+                MessageWindow newWindow = new MessageWindow(friendName, serverListener);
+                myMessageWindows.add(newWindow);
+                newWindow.start(new Stage());
+                newWindow.displayIncomingFileDownloadPrompt(sfp);
             }
         });
     }

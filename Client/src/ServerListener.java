@@ -47,9 +47,15 @@ public class ServerListener implements Runnable {
                 Object obj;
                 obj = in.readObject();
 
-                if (obj.getClass().equals(Message.class)) {
+                if (obj.getClass().equals(MessagePacket.class)) {
                     // find friend window/if not there pop it up and display message
-                    myMainWindow.incomingMessage((Message) obj);
+                    myMainWindow.incomingMessage((MessagePacket) obj);
+                }
+                else if(obj.getClass().equals(ImagePacket.class)){
+                    myMainWindow.incomingMessage((ImagePacket) obj);
+                }
+                else if(obj.getClass().equals(SendFilePacket.class)){
+                    myMainWindow.incomingMessage((SendFilePacket) obj);
                 }
                 else if (obj.getClass().equals(Friend.class)) {
                     myMainWindow.processFriend((Friend) obj);
@@ -96,12 +102,31 @@ public class ServerListener implements Runnable {
      *
      */
 
-    public void sendMessage(Message textMessage) {
+    public void sendMessage(MessagePacket textMessage) {
         try {
             out.writeObject(textMessage);
         }
         catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending image packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+    
+    public void sendImage(ImagePacket ip) {
+        try {
+            out.writeObject(ip);
+        }
+        catch (IOException ex) {
             DeveloperWindow.displayMessage("Error: sending message packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+    
+    public void sendFile(SendFilePacket sfp){
+        try{
+            out.writeObject(sfp);
+        }catch(IOException ex){
+            DeveloperWindow.displayMessage("Error: sending file packet");
             DeveloperWindow.displayMessage(ex.toString());
         }
     }

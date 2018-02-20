@@ -3,10 +3,10 @@ import java.io.IOException;
 
 public class MessageHandler implements Runnable{
     
-    private Message message;
+    private MessagePacket message;
     private boolean messageSent = false;
     
-    public MessageHandler(Message message){
+    public MessageHandler(MessagePacket message){
         this.message = message;
     }
     

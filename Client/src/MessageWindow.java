@@ -1,15 +1,24 @@
 
+import java.awt.Desktop;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -38,9 +47,13 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.geometry.Insets;
+import javafx.scene.control.Hyperlink;
+import javax.imageio.ImageIO;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 public class MessageWindow extends Application {
-    
+
     private static final String LOG_PATH = System.getProperty("user.dir") + "/data/logs/";
     private ServerListener serverListener;
     private String friendName;
@@ -62,21 +75,21 @@ public class MessageWindow extends Application {
     private VBox textFlowVBox;
     private BorderPane controlHBox;
     private boolean manualScrolling = false;
-    
+
     public MessageWindow(String friendName, ServerListener serverListener) {
         this.serverListener = serverListener;
         this.friendName = friendName;
         messageLog.set("");
-        
+
     }
 
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        
+
         // main pain
         FlowPane pane = new FlowPane();
-        
+
         // menu bar and items
         mainMenuBar = new MenuBar();
         mainMenuBar.prefWidthProperty().bind(pane.widthProperty());
@@ -93,7 +106,7 @@ public class MessageWindow extends Application {
                 blockFriendMenuItem);
         other.getItems().addAll(settingsMenuItem, exitConvoMenuItem);
         mainMenuBar.getMenus().addAll(friendMenuItem, other);
-        
+
         // text areas and buttons
         inputTextArea = new TextArea("");
         sendMessageButton = new Button("Send");
@@ -114,8 +127,8 @@ public class MessageWindow extends Application {
         inputTextArea.setText("");
         //Michelle's wrapping changes and textflow padding
         textFlowScrollPane.setFitToWidth(true);
-        textFlow.setPadding(new Insets(0,10,0,10));
-        
+        textFlow.setPadding(new Insets(0, 10, 0, 10));
+
         //
         controlHBox = new BorderPane();
         /* various component listeners */
@@ -130,11 +143,10 @@ public class MessageWindow extends Application {
             inputTextArea.setMaxWidth(primaryStage.getWidth() - 220);
             inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
         });
-        
+
         controlHBox.setTop(sendImageButton);
         controlHBox.setBottom(sendMessageButton);
-        
-        
+
         pane.setPrefSize(350.0, 350.0);
         pane.setVgap(5);
         pane.setHgap(12);
@@ -143,24 +155,23 @@ public class MessageWindow extends Application {
         pane.getChildren().add(inputTextArea);
         pane.getChildren().add(controlHBox);
         //pane.getChildren().add(sendMessageButton);
-       //pane.getChildren().add(sendImageButton);
+        //pane.getChildren().add(sendImageButton);
         //pane.getChildren().add(closeWindowButton);
-        
+
         Scene scene = new Scene(pane, 350, 350);
-        
+
         primaryStage.setOnCloseRequest(new clickedXToClose());
         primaryStage.setMinWidth(395);
         primaryStage.setMinHeight(390);
         primaryStage.setResizable(true);
         primaryStage.setTitle(friendName);
         primaryStage.setScene(scene);
-        
-        
+
         // check for logs
-        if(Config.cfg.isAutoSaveLogs()){
+        if (Config.cfg.isAutoSaveLogs()) {
             checkForLog();
         }
-        
+
         primaryStage.show();
     }
 
@@ -175,7 +186,7 @@ public class MessageWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-            
+
         }
 
     }
@@ -210,6 +221,7 @@ public class MessageWindow extends Application {
         }
 
     }
+
     class SettingsMenuItemListener implements EventHandler<ActionEvent> {
 
         @Override
@@ -221,13 +233,14 @@ public class MessageWindow extends Application {
         }
 
     }
+
     //More dumb Michelle stuff
     class AttatchImageListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
             if (inputTextArea.getText() != null) {
-                
+
                 attatchImage();
             }
         }
@@ -251,12 +264,12 @@ public class MessageWindow extends Application {
                 }
 
             }
-            else{
+            else {
                 if (inputTextArea.getText() != null) {
                     inputTextArea.setStyle("-fx-text-fill: #" + Integer.toHexString(Config.cfg.getColor().hashCode()));
                     inputTextArea.setFont(Config.cfg.getFontAsFont());
                 }
-            
+
             }
 
         }
@@ -278,16 +291,17 @@ public class MessageWindow extends Application {
     /*
      * build message to display from text message and display it on textflow
      */
-    public void displayIncomingText(Message textMessage) {
-        
-        String message = textMessage.getComingFrom() + ": " + textMessage.getMessage() + "\r\n";
+    public void displayIncomingText(MessagePacket textMessage) {
+
+        String message = textMessage.getComingFrom() + ":\n" + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
         Text newText = new Text(message);
         if (Config.cfg.isIgnoreFriendTextStyle()) {
             newText.setFill(Config.cfg.getColor());
             newText.setFont(Config.cfg.getFontAsFont());
-        } else{
+        }
+        else {
             newText.setFont(textMessage.getFontAsFont());
             newText.setFill(textMessage.getColor());
         }
@@ -296,21 +310,21 @@ public class MessageWindow extends Application {
             textFlowScrollPane.setVvalue(1.0);
         }
     }
-    
-    void displayMyText(Message textMessage){
-        
-        String message = "\n" + textMessage.getComingFrom() + ":\n" + textMessage.getMessage() + "\r\n";
+
+    void displayMyText(MessagePacket textMessage) {
+
+        String message = textMessage.getComingFrom() + ":\n" + textMessage.getMessage() + "\r\n";
         /* add message to the message log */
         messageLog.set(messageLog.getValue() + message);
         Text newText = new Text(message);
         newText.setFill(textMessage.getColor());
         newText.setFont(textMessage.getFontAsFont());
         textFlow.getChildren().add(newText);
-        
+
         if (!manualScrolling) {
             textFlowScrollPane.setVvalue(1.0);
         }
-        
+
     }
 
     /*
@@ -330,7 +344,7 @@ public class MessageWindow extends Application {
      */
     private void sendMessage(String message) {
         // create Message object and display it locally, then send it to the server
-        Message textMessage = new Message(
+        MessagePacket textMessage = new MessagePacket(
                 MainWindow.username,
                 friendName,
                 message,
@@ -338,32 +352,132 @@ public class MessageWindow extends Application {
                 Config.cfg.getColor());
         displayMyText(textMessage);
         serverListener.sendMessage(textMessage);
-        
+
     }
-    
+
+    /*
+     * send file to friend
+     */
+    private void sendFile(Object obj) {
+
+    }
+
     //Michelle does more stupid stuff
-    private void attatchImage(){
+    private void attatchImage() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Resource File");
-        fileChooser.getExtensionFilters().addAll(new ExtensionFilter("JPGs", "*.JPG"));
+
         File file = fileChooser.showOpenDialog(null);
-        if(file != null){
-            Image image = new Image(file.toURI().toString());
-            sendImage(image);
+        if (file != null) {
+
+            String fileExtension = FilenameUtils.getExtension(file.toString());
+            DeveloperWindow.displayMessage(fileExtension);
+            switch (fileExtension) {
+                case "jpg":
+                case "png":
+                case "bmp":
+                case "tiff":
+                case "jpeg":
+                case "gif":
+                    // if image
+                    Image image = new Image(file.toURI().toString());
+                    displayImage(image, MainWindow.username);
+                    try {
+                        sendOutgoingImage(ImageIO.read(file));
+                    }
+                    catch (IOException ex) {
+                        DeveloperWindow.displayMessage("Error: in message window class at attachImage; cannot ImageIO.read");
+                        DeveloperWindow.displayMessage(ex.toString());
+                    }
+                default:
+                    // if file
+                    //sendFile(file);
+                    displayIncomingFileDownloadPrompt(new SendFilePacket(MainWindow.username, friendName, file));
+            }
+
         }
+
     }
-    private void sendImage(Image file){     
-        
+
+    private void displayImage(Image file, String comfingFrom) {
+
         ImageView imageView = new ImageView(file);
-        imageView.setFitHeight(100);
-        imageView.setFitWidth(100);
+        imageView.setFitHeight(200);
+        imageView.setFitWidth(200);
         imageView.setPreserveRatio(true);
-        textFlow.getChildren().add(new Text("\n"));
+        textFlow.getChildren().add(new Text(comfingFrom + ":\n"));
         textFlow.getChildren().add(imageView);
         textFlow.getChildren().add(new Text("\n"));
-        
+
     }
-    //
+
+    public void displayIncomingImage(final ImagePacket ip) {
+        Hyperlink acceptHyperlink = new Hyperlink("Accept");
+        Hyperlink rejectHyperlink = new Hyperlink("Reject");
+        Text askForImage = new Text("Incoming image from " + ip.getComingFrom() + "\n");
+        Text spacing = new Text("  ");
+        textFlow.getChildren().addAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+        acceptHyperlink.setOnAction(e -> {
+            textFlow.getChildren().removeAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+            displayImage(SwingFXUtils.toFXImage(ip.getImage(), null), ip.getComingFrom());
+        });
+        rejectHyperlink.setOnAction(e -> {
+            textFlow.getChildren().removeAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+        });
+    }
+
+    public void displayIncomingFileDownloadPrompt(SendFilePacket sfp) {
+
+        Hyperlink acceptHyperlink = new Hyperlink("Accept");
+        Hyperlink rejectHyperlink = new Hyperlink("Reject");
+        Text askForImage = new Text("Save file from " + sfp.getComingFrom() + "\n");
+        Text spacing = new Text("  ");
+        textFlow.getChildren().addAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+
+        acceptHyperlink.setOnAction(e -> {
+            textFlow.getChildren().removeAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save file");
+            fileChooser.setInitialFileName(FilenameUtils.getName(sfp.getFile().toString()));
+            fileChooser.getExtensionFilters().add(new ExtensionFilter(FilenameUtils.getExtension(sfp.getFile().toString()),
+                    FilenameUtils.getExtension(sfp.getFile().toString())));
+            try {
+                File tempFile = fileChooser.showSaveDialog(null);
+                FileUtils.copyFile(sfp.getFile(), tempFile, false);
+                String newPath = FilenameUtils.getFullPath(tempFile.toString());
+                Hyperlink openFolderHyperlink = new Hyperlink("Open Folder");
+                textFlow.getChildren().add(new Text("File Saved."));
+                textFlow.getChildren().add(openFolderHyperlink);
+                textFlow.getChildren().add(new Text("\n"));
+                openFolderHyperlink.setOnAction(ea -> {
+                    try {
+                        Desktop.getDesktop().open(new File(newPath));
+                    }
+                    catch (IOException egh) {
+                    }
+                });
+            }
+            catch (IOException ex) {
+                DeveloperWindow.displayMessage("Error: in messagewindow class at displayIncomingFileDownloadPrompt");
+            }
+        });
+
+        rejectHyperlink.setOnAction(e -> {
+            textFlow.getChildren().removeAll(askForImage, acceptHyperlink, spacing, rejectHyperlink);
+        });
+    }
+
+    public void sendOutgoingImage(BufferedImage ic) {
+
+        serverListener.sendImage(new ImagePacket(MainWindow.username, friendName, ic));
+
+    }
+
+    public void sendFile(File file) {
+
+        serverListener.sendFile(new SendFilePacket(MainWindow.username, friendName, file));
+
+    }
 
     /*
      * gets the text from the log file, if no log file, creates one
@@ -429,24 +543,25 @@ public class MessageWindow extends Application {
         }
 
     }
-    
+
     /**
      * closes chat window
      */
-    public void closeChatWindow(){
-        if(Config.cfg.isAutoSaveLogs()){
+    public void closeChatWindow() {
+        if (Config.cfg.isAutoSaveLogs()) {
             writeToLog();
         }
+        MainWindow.myMessageWindows.remove(this);
         primaryStage.close();
     }
-    
+
     /**
      * allows the MainWindow to access the Message window stage
-     * @return 
+     *
+     * @return
      */
-    
-    public Stage getStage(){
+    public Stage getStage() {
         return primaryStage;
     }
-    
+
 }

@@ -115,10 +115,26 @@ public class ClientHandler implements Runnable {
                 fl = null;
 
             }
-            else if (obj.getClass().equals(Message.class)) {
-                Message message = (Message) obj;
+            else if (obj.getClass().equals(MessagePacket.class)) {
+                
+                MessagePacket message = (MessagePacket) obj;
                 myServer.writeToConsole("From " + message.getComingFrom() + " to " + message.getSendingTo() + " > " + message.getMessage());
                 new Thread(new MessageHandler(message)).start();
+                
+            }
+            else if(obj.getClass().equals(ImagePacket.class)){
+                
+                ImagePacket ip = (ImagePacket) obj;
+                myServer.writeToConsole("From " + ip.getComingFrom() + " to " + ip.getSendingTo() + " * user is sending Image.");
+                new Thread(new ImageHandler(ip)).start();
+                
+            }
+            else if(obj.getClass().equals(SendFilePacket.class)){
+                
+                SendFilePacket sfp = (SendFilePacket) obj;
+                myServer.writeToConsole("From " + sfp.getComingFrom() + " to " + sfp.getSendingTo() + " * user is sending a file.");
+                new Thread(new FileHandler(sfp)).start();
+                
             }
             else if (obj.getClass().equals(AddFriend.class)) {
                 boolean isSuccessful;
