@@ -12,9 +12,9 @@ public class ServerInstructions {
     // most likely the database will remain on the same machine as the server
     // but, if it doesn't the url is changed here,
     // and you can not use 'root' for the mySql login. 'root' is reserved for local machine only.
-    private static final String DB_NAME = "jdbc:mysql://127.0.0.1:3306/unf_im_database";
-    private static final String DB_USERNAME = "root";
-    private static final String DB_PASSWORD = "l83r6q4E$8io";
+    private static final String DB_NAME = "jdbc:mysql://jhastycomp.ddns.net:3306/osprey_im_database";
+    private static final String DB_USERNAME = "chat";
+    private static final String DB_PASSWORD = "chat";
 
     private Connection myConnection = null;
     private Server myServer;

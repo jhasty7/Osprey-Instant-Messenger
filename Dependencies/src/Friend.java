@@ -12,6 +12,7 @@ public class Friend implements Serializable{
     private boolean isRemove = false;
     private boolean isBlock = false;
     private boolean isYourself = false;
+    private boolean pendingAdd = false;
     
     public Friend(){
         username = null;
@@ -25,6 +26,13 @@ public class Friend implements Serializable{
         this.onlineStatus = onlineStatus;
         this.currentStatus = currentStatus;
         this.textStatus = textStatus;
+    }
+    public Friend(String userName, boolean onlineStatus,eCURRENT_STATUS currentStatus,String textStatus, boolean pendingAdd){
+        this.username = userName;
+        this.onlineStatus = onlineStatus;
+        this.currentStatus = currentStatus;
+        this.textStatus = textStatus;
+        this.pendingAdd = pendingAdd;
     }
     
     public String getUsername(){
@@ -106,7 +114,12 @@ public class Friend implements Serializable{
     public void setIsBlock(boolean isBlock) {
         this.isBlock = isBlock;
     }
-    
+    public boolean isPendingAdd(){
+        return pendingAdd;
+    }
+    public void setAdd(boolean pendingAdd){
+        this.pendingAdd = pendingAdd;
+    }
     
     
     @Override
