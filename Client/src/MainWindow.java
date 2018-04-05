@@ -795,7 +795,6 @@ public class MainWindow extends Application {
             serverListener.getBlockedFriendsList();
         }
     }
-    
 
     public void setFriendsList(FriendsList myFriendsList) {
         javafx.application.Platform.runLater(() -> {
@@ -829,8 +828,10 @@ public class MainWindow extends Application {
     }
 
     public void openBlockedFriendsListWindow(BlockedFriendsList bfl) {
-        BlockedFriendsListWindow tempw = new BlockedFriendsListWindow(bfl);
-        tempw.start(new Stage());
+        javafx.application.Platform.runLater(() -> {
+            BlockedFriendsListWindow tempw = new BlockedFriendsListWindow(bfl);
+            tempw.start(new Stage());
+        });
     }
 
     public void processBeingBlocked(String personThatsBlockingYou) {
