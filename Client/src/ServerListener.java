@@ -69,6 +69,14 @@ public class ServerListener implements Runnable {
                     BlockFriend blockFriend = (BlockFriend) obj;
                     myMainWindow.processBeingBlocked(blockFriend.getFriend());
                 }
+                else if (obj.getClass().equals(FriendsList.class)){
+                    FriendsList temp = (FriendsList) inFriendsList;
+                    myMainWindow.setFriendsList(temp);
+                }
+                else if(obj.getClass().equals(BlockedFriendsList.class)){
+                    myMainWindow.openBlockedFriendsListWindow((BlockedFriendsList)obj);
+                }
+                
 
             } while (isConnected);
             myClient.close();

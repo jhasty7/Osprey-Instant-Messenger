@@ -196,6 +196,9 @@ public class ClientHandler implements Runnable {
                     OutgoingPacketHandler.SendConfirmation(out, false, blockFriend.getFriend() + " is NOT blocked, something went wrong.");
                 }
             }
+            else if (obj.getClass().equals(BlockedFriendsList.class)){
+                OutgoingPacketHandler.sendBlockedFriendsList(out, new BlockedFriendsList(serverInstructions.getBlockedFriendsList(clientsUsername)));
+            }
             else {
                 //packet deserialization problem
                 remainsListening = false;

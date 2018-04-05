@@ -284,10 +284,9 @@ public class MainWindow extends Application {
     private void exit() {
         closeAllWindows();
         serverListener.disconnect();
-        primaryStage.close();
         serverListener = null;
+        primaryStage.close();
         Platform.exit();
-        System.exit(0);
     }
 
     private void disconnectFromServer() {
@@ -813,9 +812,14 @@ public class MainWindow extends Application {
 
             }
             else if (friend.isRemove()) {
-
+                
             }
         });
+    }
+    
+    public void openBlockedFriendsListWindow(BlockedFriendsList bfl){
+        BlockedFriendsListWindow tempw = new BlockedFriendsListWindow(bfl);
+        tempw.start(new Stage());
     }
     
     public void processBeingBlocked(String personThatsBlockingYou){
@@ -832,7 +836,7 @@ public class MainWindow extends Application {
         javafx.application.Platform.runLater(() -> {
             Alert serverAlert;
             if (isSuccessful) {
-                serverAlert = new Alert(AlertType.CONFIRMATION);
+                serverAlert = new Alert(AlertType.INFORMATION);
                 serverAlert.setTitle("Success");
                 serverAlert.setHeaderText(context);
                 serverAlert.setContentText("It worked.");

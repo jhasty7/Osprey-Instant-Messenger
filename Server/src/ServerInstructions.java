@@ -85,6 +85,7 @@ public class ServerInstructions {
      * @return 
      */
     public boolean blockFriend(String username, String friendName){
+        ExecuteUpdateDatabase(processSQLString(SQL_CALLS.BlockFromFriend, username, friendName));
         return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.BlockFriend, username, friendName));
     }
 
@@ -160,6 +161,27 @@ public class ServerInstructions {
             myServer.writeToConsole("Error getting friend info for " + name + "\n");
         }
         return tempFriend;
+    }
+    
+    public ArrayList<String> getBlockedFriendsList(String username){
+        ArrayList<String> tempList = new ArrayList<>();
+
+        String sqlString = processSQLString(SQL_CALLS.BlockFriendsList, username);
+        ResultSet rs = ExecuteQueryDatabase(sqlString);
+
+        try {
+            
+            while (rs.next()) {
+                tempList.add(rs.getString(1));
+            }
+
+            return tempList;
+        }
+        catch (SQLException e) {
+            myServer.writeToConsole("Error generating blocked friends list for " + username + "\n");
+        }
+        tempList.add("");
+        return tempList;
     }
 
     /**
@@ -365,6 +387,8 @@ public class ServerInstructions {
             case BlockFromFriend:
                 return "UPDATE " + var2 + "fl SET blockedfromfriend = 1"
                         + " WHERE friend = '" + var1 + "'";
+            case BlockFriendsList:
+                return "SELECT friend FROM " + var1 + " WHERE blocked = 1";
             default:
                 sqlString = null;
         }
@@ -387,7 +411,8 @@ public class ServerInstructions {
         UpdateOnlineStatus,
         UpdateCurrentStatus,
         BlockFriend,
-        BlockFromFriend
+        BlockFromFriend,
+        BlockFriendsList
     }
 
 }

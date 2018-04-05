@@ -22,6 +22,10 @@ public final class OutgoingPacketHandler {
         out.writeObject(blockFriend);
     }
     
+    public static void sendBlockedFriendsList(ObjectOutputStream out, BlockedFriendsList bfl) throws IOException{
+        out.writeObject(bfl);
+    }
+    
     public static void SendFriendUpdateComingOnline(ObjectOutputStream out, ArrayList<Friend> onlineFriends, Friend tempFriend) throws IOException{
         
         tempFriend.setIsYourself(true);
