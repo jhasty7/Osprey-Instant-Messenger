@@ -113,7 +113,6 @@ public class ServerListener implements Runnable {
      * begin outgoing packets
      *
      */
-
     public void sendMessage(MessagePacket textMessage) {
         try {
             out.writeObject(textMessage);
@@ -150,6 +149,16 @@ public class ServerListener implements Runnable {
         }
         catch (IOException ex) {
             DeveloperWindow.displayMessage("Error: sending blockFriend packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+    
+    public void getBlockedFriendsList(){
+        try {
+            out.writeObject(new BlockedFriendsList());
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending blockFriendsList packet");
             DeveloperWindow.displayMessage(ex.toString());
         }
     }

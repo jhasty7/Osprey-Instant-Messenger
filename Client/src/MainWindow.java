@@ -78,7 +78,7 @@ public class MainWindow extends Application {
     private String mySelection;
     private Button addFriendButton;
     private Button addFriendSearchButton;
-    
+
     private ArrayList<Friend> dummyStringList;
     private Rectangle statusRectangle;
     private ContextMenu onlineFriendContextMenu;
@@ -136,6 +136,7 @@ public class MainWindow extends Application {
         menuBar.prefWidthProperty().bind(primaryStage.widthProperty());
 
         blockListMenuItem = new MenuItem("Block List");
+        blockListMenuItem.setOnAction(new BlockFriendsListActionListener());
         disconnectMenuItem = new MenuItem("Disconnect");
         settingsMenuItem = new MenuItem("Settings");
         exitMenuItem = new MenuItem("Exit");
@@ -212,11 +213,11 @@ public class MainWindow extends Application {
         addFriendButton = new Button("Add Friend");
         addFriendButton.setOnAction(new AddFriendButtonListener());
         addFriendSearchButton = new Button("Search Friend");
-        
+
         //addFriendSearchButton.setOnAction();
         bottomHBox.getChildren().add(addFriendButton);
         bottomHBox.getChildren().add(addFriendSearchButton);
-        
+
         // TODO:
         // figure out what to put at the bottombox, time? maybe?
         // 1. time elapsed in online session
@@ -642,11 +643,12 @@ public class MainWindow extends Application {
             });
         }
     }
+
     private class friendRequestsButtonListener implements EventHandler<ActionEvent> {
 
         @Override
         public void handle(ActionEvent event) {
-            
+
         }
     }
 
@@ -700,13 +702,13 @@ public class MainWindow extends Application {
                 removeFriendAlert.setContentText("You can always unblock them");
                 Optional<ButtonType> result = removeFriendAlert.showAndWait();
                 if (result.get() == ButtonType.OK) {
-                    for(MessageWindow w : myMessageWindows){
-                        if(w.getFriendName().equals(mySelection)){
+                    for (MessageWindow w : myMessageWindows) {
+                        if (w.getFriendName().equals(mySelection)) {
                             w.closeChatWindow();
                         }
                     }
                     serverListener.blockFriend(mySelection);
-                    
+
                 }
             }
         }
@@ -786,6 +788,15 @@ public class MainWindow extends Application {
         }
     }
 
+    private class BlockFriendsListActionListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            serverListener.getBlockedFriendsList();
+        }
+    }
+    
+
     public void setFriendsList(FriendsList myFriendsList) {
         javafx.application.Platform.runLater(() -> {
             this.myFriendsList = myFriendsList;
@@ -812,20 +823,20 @@ public class MainWindow extends Application {
 
             }
             else if (friend.isRemove()) {
-                
+
             }
         });
     }
-    
-    public void openBlockedFriendsListWindow(BlockedFriendsList bfl){
+
+    public void openBlockedFriendsListWindow(BlockedFriendsList bfl) {
         BlockedFriendsListWindow tempw = new BlockedFriendsListWindow(bfl);
         tempw.start(new Stage());
     }
-    
-    public void processBeingBlocked(String personThatsBlockingYou){
+
+    public void processBeingBlocked(String personThatsBlockingYou) {
         javafx.application.Platform.runLater(() -> {
-            for(MessageWindow w : myMessageWindows){
-                if(w.getFriendName().equals(personThatsBlockingYou)){
+            for (MessageWindow w : myMessageWindows) {
+                if (w.getFriendName().equals(personThatsBlockingYou)) {
                     w.closeChatWindow();
                 }
             }
