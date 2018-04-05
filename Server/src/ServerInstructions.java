@@ -388,7 +388,7 @@ public class ServerInstructions {
                 return "UPDATE " + var2 + "fl SET blockedfromfriend = 1"
                         + " WHERE friend = '" + var1 + "'";
             case BlockFriendsList:
-                return "SELECT friend FROM " + var1 + " WHERE blocked = 1";
+                return "SELECT friend FROM " + var1 + "fl WHERE blocked = 1";
             default:
                 sqlString = null;
         }

@@ -167,6 +167,7 @@ public class MessageWindow extends Application {
         primaryStage.setOnCloseRequest(new clickedXToClose());
         primaryStage.setMinWidth(395);
         primaryStage.setMinHeight(390);
+        primaryStage.getIcons().add(new Image("unf_icon.png"));
         primaryStage.setResizable(true);
         primaryStage.setTitle(friendName);
         primaryStage.setScene(scene);

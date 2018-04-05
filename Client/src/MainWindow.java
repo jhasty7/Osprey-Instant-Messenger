@@ -805,6 +805,13 @@ public class MainWindow extends Application {
 
     public void processFriend(Friend friend) {
         javafx.application.Platform.runLater(() -> {
+            if(!friend.getOnlineStatus()){
+                for(MessageWindow w : myMessageWindows){
+                    if(w.getFriendName().equals(friend.getUsername())){
+                        w.closeChatWindow();
+                    }
+                }
+            }
             if (friend.isUpdate()) {
                 this.myFriendsList.updateFriend(friend);
                 updateFriendsListGUI();
