@@ -97,8 +97,7 @@ public class MessageWindow extends Application {
         exitConvoMenuItem.setOnAction(new CloseWindowButtonListener());
         blockFriendMenuItem.setOnAction(new BlockFriendMenuItemListener());
         settingsMenuItem.setOnAction(new SettingsMenuItemListener());
-        friendMenuItem.getItems().addAll(ignoreTextMenuItem,
-                blockFriendMenuItem);
+        friendMenuItem.getItems().addAll(ignoreTextMenuItem);
         other.getItems().addAll(settingsMenuItem, exitConvoMenuItem);
         mainMenuBar.getMenus().addAll(friendMenuItem, other);
 
@@ -135,8 +134,8 @@ public class MessageWindow extends Application {
             textFlowVBox.setPrefHeight(primaryStage.getHeight() - 200);
         });
         primaryStage.widthProperty().addListener(p -> {
-            inputTextArea.setMaxWidth(primaryStage.getWidth() - 220);
-            inputTextArea.setPrefWidth(primaryStage.getWidth() - 220);
+            inputTextArea.setMaxWidth(primaryStage.getWidth() - 100);
+            inputTextArea.setPrefWidth(primaryStage.getWidth() - 100);
         });
         textFlow.getChildren().addListener(
                 (ListChangeListener<Node>) ((Change) -> {

@@ -76,7 +76,7 @@ public class MainWindow extends Application {
     private String mySelection;
     private Button addFriendButton;
     private Button addFriendSearchButton;
-    private Button friendRequestsButton;
+    
     private ArrayList<Friend> dummyStringList;
     private Rectangle statusRectangle;
     private ContextMenu onlineFriendContextMenu;
@@ -210,12 +210,11 @@ public class MainWindow extends Application {
         addFriendButton = new Button("Add Friend");
         addFriendButton.setOnAction(new AddFriendButtonListener());
         addFriendSearchButton = new Button("Search Friend");
-        friendRequestsButton = new Button("Friend Requests");
-        friendRequestsButton.setOnAction(new friendRequestsButtonListener());
+        
         //addFriendSearchButton.setOnAction();
         bottomHBox.getChildren().add(addFriendButton);
         bottomHBox.getChildren().add(addFriendSearchButton);
-        bottomHBox.getChildren().add(friendRequestsButton);
+        
         // TODO:
         // figure out what to put at the bottombox, time? maybe?
         // 1. time elapsed in online session
