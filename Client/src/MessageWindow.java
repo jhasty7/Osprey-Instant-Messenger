@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Optional;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -43,6 +44,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Hyperlink;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
@@ -91,6 +94,7 @@ public class MessageWindow extends Application {
         friendMenuItem = new Menu("Friend");
         other = new Menu("Conversation");
         ignoreTextMenuItem = new CheckMenuItem("Ignore Font/Color");
+        ignoreTextMenuItem.selectedProperty().addListener(new IgnoreTextFontListener());
         blockFriendMenuItem = new MenuItem("Block");
         exitConvoMenuItem = new MenuItem("Exit Conversation");
         settingsMenuItem = new MenuItem("Settings");
@@ -100,7 +104,8 @@ public class MessageWindow extends Application {
         friendMenuItem.getItems().addAll(ignoreTextMenuItem);
         other.getItems().addAll(settingsMenuItem, exitConvoMenuItem);
         mainMenuBar.getMenus().addAll(friendMenuItem, other);
-
+        ignoreTextMenuItem.setSelected(Config.cfg.isIgnoreFriendTextStyle());
+        
         // text areas and buttons
         inputTextArea = new TextArea("");
         sendMessageButton = new Button("Send");
@@ -185,9 +190,28 @@ public class MessageWindow extends Application {
 
         @Override
         public void handle(ActionEvent event) {
-
+                Alert removeFriendAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                removeFriendAlert.setTitle("Goodnight Sweet Prince");
+                removeFriendAlert.setHeaderText("Block " + friendName + "?");
+                removeFriendAlert.setContentText("You can always unblock them");
+                Optional<ButtonType> result = removeFriendAlert.showAndWait();
+                if (result.get() == ButtonType.OK) {
+                    serverListener.blockFriend(friendName);
+                    closeChatWindow();
+                }
         }
 
+    }
+    
+    private class IgnoreTextFontListener implements ChangeListener<Boolean>{
+        @Override
+        public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+            if(newValue){
+                Config.cfg.setIgnoreFriendTextStyle(newValue);
+            }else{
+                Config.cfg.setIgnoreFriendTextStyle(newValue);
+            }
+        }
     }
 
     /*

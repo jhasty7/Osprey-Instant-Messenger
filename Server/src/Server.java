@@ -75,7 +75,7 @@ public class Server extends Application {
      * @param none text written to console on startup
      */
     private void startUpText() {
-        writeToConsole("Welcome to UNF Chat server. Version 1.0\n");
+        writeToConsole("Welcome to OspreyIM server. Version 1.0\n");
     }
 
     /**

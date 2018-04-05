@@ -18,6 +18,10 @@ public final class OutgoingPacketHandler {
         out.writeObject(friend);
     }
     
+    public static void sendBlockFriendPacket(ObjectOutputStream out, BlockFriend blockFriend) throws IOException{
+        out.writeObject(blockFriend);
+    }
+    
     public static void SendFriendUpdateComingOnline(ObjectOutputStream out, ArrayList<Friend> onlineFriends, Friend tempFriend) throws IOException{
         
         tempFriend.setIsYourself(true);
@@ -50,4 +54,6 @@ public final class OutgoingPacketHandler {
             }
         }
     }
+    
+    
 }

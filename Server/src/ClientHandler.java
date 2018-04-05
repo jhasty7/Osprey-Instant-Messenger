@@ -100,7 +100,7 @@ public class ClientHandler implements Runnable {
                 myServer.writeToConsole(connectingPacket.getUsername() + " added to connected user list");
                 // set user online
                 serverInstructions.setOnlineStatus(clientsUsername, eONLINE_STATUS.online);
-                
+
                 // generate friends list
                 FriendsList fl = serverInstructions.retrieveFriendsList(clientsUsername);
                 // send user their friends list
@@ -114,25 +114,25 @@ public class ClientHandler implements Runnable {
 
             }
             else if (obj.getClass().equals(MessagePacket.class)) {
-                
+
                 MessagePacket message = (MessagePacket) obj;
                 myServer.writeToConsole("From " + message.getComingFrom() + " to " + message.getSendingTo() + " > " + message.getMessage());
                 new Thread(new MessageHandler(message)).start();
-                
+
             }
-            else if(obj.getClass().equals(ImagePacket.class)){
-                
+            else if (obj.getClass().equals(ImagePacket.class)) {
+
                 ImagePacket ip = (ImagePacket) obj;
                 myServer.writeToConsole("From " + ip.getComingFrom() + " to " + ip.getSendingTo() + " * user is sending Image.");
                 new Thread(new ImageHandler(ip)).start();
-                
+
             }
-            else if(obj.getClass().equals(SendFilePacket.class)){
-                
+            else if (obj.getClass().equals(SendFilePacket.class)) {
+
                 SendFilePacket sfp = (SendFilePacket) obj;
                 myServer.writeToConsole("From " + sfp.getComingFrom() + " to " + sfp.getSendingTo() + " * user is sending a file.");
                 new Thread(new FileHandler(sfp)).start();
-                
+
             }
             else if (obj.getClass().equals(AddFriend.class)) {
                 boolean isSuccessful;
@@ -143,7 +143,7 @@ public class ClientHandler implements Runnable {
                 if (isSuccessful) {
                     Friend tempfriend = serverInstructions.getFriendInfoFromDatabase(addFriend.getFriend());
                     tempfriend.setIsAdd(true);
-                    OutgoingPacketHandler.sendFriendToClient(out,tempfriend);
+                    OutgoingPacketHandler.sendFriendToClient(out, tempfriend);
                 }
             }
             else if (obj.getClass().equals(RemoveFriend.class)) {
@@ -179,6 +179,22 @@ public class ClientHandler implements Runnable {
                 OutgoingPacketHandler.SendFriendUpdateGoingOffline(serverInstructions.retrieveOnlyOnlineFriends(clientsUsername), clientAsFriend);
                 myServer.writeToConsole(clientsUsername + " has disconnected. Removing from the list and closing thread.");
                 dropConnection();
+            }
+            else if (obj.getClass().equals(BlockFriend.class)) {
+                BlockFriend blockFriend = (BlockFriend) obj;
+                if (serverInstructions.blockFriend(clientsUsername, blockFriend.getFriend())) {
+                    OutgoingPacketHandler.SendConfirmation(out, true, blockFriend.getFriend() + " is now blocked.");
+                    OutgoingPacketHandler.SendFriendsList(out, serverInstructions.retrieveFriendsList(clientsUsername));
+                    for (User u : connectedUsers) {
+                        if(u.getUsersUsername().equals(blockFriend.getFriend())){
+                            OutgoingPacketHandler.sendBlockFriendPacket(u.getOut(), new BlockFriend(clientsUsername));
+                            OutgoingPacketHandler.SendFriendsList(u.getOut(), serverInstructions.retrieveFriendsList(blockFriend.getFriend()));
+                        }
+                    }
+                }
+                else {
+                    OutgoingPacketHandler.SendConfirmation(out, false, blockFriend.getFriend() + " is NOT blocked, something went wrong.");
+                }
             }
             else {
                 //packet deserialization problem

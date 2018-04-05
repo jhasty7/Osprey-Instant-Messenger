@@ -1,6 +1,8 @@
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -45,7 +47,7 @@ public class MainWindow extends Application {
 
     // very important variables/objects
     private FriendsList myFriendsList;
-    public static ArrayList<MessageWindow> myMessageWindows;
+    public static List<MessageWindow> myMessageWindows;
     private ServerListener serverListener;
     public static String username;
 
@@ -90,7 +92,7 @@ public class MainWindow extends Application {
     public MainWindow(String usernameTemp) {
         dummyStringList = new ArrayList<>();
         dummyStringList.add(new Friend("", false, null, ""));
-        myMessageWindows = new ArrayList<>();
+        myMessageWindows = new CopyOnWriteArrayList<>();
         username = usernameTemp;
         // establish lasting connection to the server
         serverListener = new ServerListener(this);
@@ -699,8 +701,13 @@ public class MainWindow extends Application {
                 removeFriendAlert.setContentText("You can always unblock them");
                 Optional<ButtonType> result = removeFriendAlert.showAndWait();
                 if (result.get() == ButtonType.OK) {
-
+                    for(MessageWindow w : myMessageWindows){
+                        if(w.getFriendName().equals(mySelection)){
+                            w.closeChatWindow();
+                        }
+                    }
                     serverListener.blockFriend(mySelection);
+                    
                 }
             }
         }
@@ -807,6 +814,16 @@ public class MainWindow extends Application {
             }
             else if (friend.isRemove()) {
 
+            }
+        });
+    }
+    
+    public void processBeingBlocked(String personThatsBlockingYou){
+        javafx.application.Platform.runLater(() -> {
+            for(MessageWindow w : myMessageWindows){
+                if(w.getFriendName().equals(personThatsBlockingYou)){
+                    w.closeChatWindow();
+                }
             }
         });
     }

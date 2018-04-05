@@ -1,7 +1,6 @@
 
 public class BlockFriend extends Packet{
     private String friend;
-    
     public BlockFriend(){
         this.friend = null;
     }

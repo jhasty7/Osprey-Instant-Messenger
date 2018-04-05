@@ -12,7 +12,7 @@ public class ServerInstructions {
     // most likely the database will remain on the same machine as the server
     // but, if it doesn't the url is changed here,
     // and you can not use 'root' for the mySql login. 'root' is reserved for local machine only.
-    private static final String DB_NAME = "jdbc:mysql://jhastycomp.ddns.net:3306/osprey_im_database";
+    private static final String DB_NAME = "jdbc:mysql://127.0.0.1:3306/unf_im_database";
     private static final String DB_USERNAME = "chat";
     private static final String DB_PASSWORD = "chat";
 
@@ -76,6 +76,16 @@ public class ServerInstructions {
      */
     public boolean removeFriend(String username, String friendName) {
         return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.RemoveFriend, username, friendName));
+    }
+    
+    /**
+     * 
+     * @param username
+     * @param friendName
+     * @return 
+     */
+    public boolean blockFriend(String username, String friendName){
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.BlockFriend, username, friendName));
     }
 
     /**
@@ -324,7 +334,7 @@ public class ServerInstructions {
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = 0)";
+                        + "WHERE username = friend AND blocked = 0 AND blockedfromfriend = 0)";
             case GetOnlyOnlineFriends:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
@@ -336,10 +346,10 @@ public class ServerInstructions {
                         + "FROM user_credentials\n"
                         + "WHERE username = '" + var1 + "'";
             case AddFriend:
-                return "INSERT INTO " + var1 + "FL (friend,blocked) VALUES ('"
-                        + var2 + "', 0)";
+                return "INSERT INTO " + var1 + "FL (friend,blocked,blockedfromfriend) VALUES ('"
+                        + var2 + "', 0, 0)";
             case RemoveFriend:
-                return "DELETE FROM " + var1 + "FL WHERE friend = '" + var2 + "'";
+                return "DELETE FROM " + var1 + "FL WHERE friend = '" + var2 + "' AND blockedfromfriend = 0";
             case UpdateTextStatus:
                 return "UPDATE user_credentials SET text_status = '" + var2
                         + "' WHERE username = '" + var1 + "'";
@@ -349,6 +359,12 @@ public class ServerInstructions {
             case UpdateCurrentStatus:
                 return "UPDATE user_credentials SET current_status = '" + var2 + "'"
                         + " WHERE Username = '" + var1 + "'";
+            case BlockFriend:
+                return "UPDATE " + var1 + "fl SET blocked = 1"
+                        + " WHERE friend = '" + var2 + "'";
+            case BlockFromFriend:
+                return "UPDATE " + var2 + "fl SET blockedfromfriend = 1"
+                        + " WHERE friend = '" + var1 + "'";
             default:
                 sqlString = null;
         }
@@ -369,7 +385,9 @@ public class ServerInstructions {
         RemoveFriend,
         UpdateTextStatus,
         UpdateOnlineStatus,
-        UpdateCurrentStatus
+        UpdateCurrentStatus,
+        BlockFriend,
+        BlockFromFriend
     }
 
 }

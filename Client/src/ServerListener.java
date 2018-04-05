@@ -65,6 +65,10 @@ public class ServerListener implements Runnable {
                     ServerConfirmation tempSC = (ServerConfirmation) obj;
                     myMainWindow.createAlertFromServer(tempSC.isSuccessful(), tempSC.getContext());
                 }
+                else if (obj.getClass().equals(BlockFriend.class)){
+                    BlockFriend blockFriend = (BlockFriend) obj;
+                    myMainWindow.processBeingBlocked(blockFriend.getFriend());
+                }
 
             } while (isConnected);
             myClient.close();
