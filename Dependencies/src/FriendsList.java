@@ -7,7 +7,8 @@ public class FriendsList implements Serializable {
     private ArrayList<Friend> onlineFriends;
     private ArrayList<Friend> offlineFriends;
     private ArrayList<Friend> pendingFriends;
-    
+    private boolean hasPendingFriends = false;
+
     public FriendsList() {
         onlineFriends = new ArrayList<>();
         onlineFriends.add(new Friend("", false, null, ""));
@@ -15,7 +16,7 @@ public class FriendsList implements Serializable {
         offlineFriends.add(new Friend("", false, null, ""));
     }
 
-    /* constructor if you have one list of mixed online/offline */
+    /* constructor if you have one list of mixed online/offline/pending */
     public FriendsList(ArrayList<Friend> friendsList) {
         onlineFriends = new ArrayList<>();
         offlineFriends = new ArrayList<>();
@@ -38,12 +39,17 @@ public class FriendsList implements Serializable {
         return offlineFriends;
     }
 
+    public ArrayList<Friend> getPendingFriends() {
+        return pendingFriends;
+    }
+
     /* sorts the one mixed online/offline friends list into 2 lists */
     private void sortList(ArrayList<Friend> friendsList) {
         int i;
         for (i = 0; i < friendsList.size(); i++) {
-            if(friendsList.get(i).isPendingAdd()){
+            if (friendsList.get(i).isPendingAdd()) {
                 pendingFriends.add(friendsList.get(i));
+                hasPendingFriends = true;
             }
             else if (friendsList.get(i).getOnlineStatus()) {
                 onlineFriends.add(friendsList.get(i));
@@ -54,13 +60,14 @@ public class FriendsList implements Serializable {
         }
 
         if (onlineFriends.isEmpty()) {
-            onlineFriends.add(new Friend("", false, null, "", false));
+            onlineFriends.add(new Friend("", false, null, ""));
         }
         if (offlineFriends.isEmpty()) {
-            offlineFriends.add(new Friend("", false, null, "", false));
+            offlineFriends.add(new Friend("", false, null, ""));
         }
         if (pendingFriends.isEmpty()) {
-            pendingFriends.add(new Friend("", false, null, "", true));
+            hasPendingFriends = false;
+            pendingFriends.add(new Friend("", false, null, ""));
         }
     }
 
@@ -78,7 +85,8 @@ public class FriendsList implements Serializable {
             }
 
             return tempList;
-        }else{
+        }
+        else {
             tempList.add("");
         }
         return tempList;
@@ -97,16 +105,17 @@ public class FriendsList implements Serializable {
 
             return tempList;
         }
-        else{
+        else {
             tempList.add("");
         }
         return tempList;
     }
+
     /* returns pending friends as ArrayList<String> */
     public ArrayList<String> getPendingFriendsAsString() {
         ArrayList<String> tempList = new ArrayList<>();
         if (!pendingFriends.isEmpty()
-                && !offlineFriends.get(0).getUsername().equals("")) {
+                && !pendingFriends.get(0).getUsername().equals("")) {
 
             int i;
             for (i = 0; i < pendingFriends.size(); i++) {
@@ -115,7 +124,7 @@ public class FriendsList implements Serializable {
 
             return tempList;
         }
-        else{
+        else {
             tempList.add("");
         }
         return tempList;
@@ -123,44 +132,93 @@ public class FriendsList implements Serializable {
 
     /* changing friend from online to offline and vice versa */
     public void updateFriend(Friend friend) {
+        if (friend.isAcceptedFriendRequest()) {
 
-        if (friend.getOnlineStatus()) {
-
-            int i;
-            for (i = 0; i < offlineFriends.size(); i++) {
-                if (friend.getUsername().equals(offlineFriends.get(i).getUsername())) {
-                    offlineFriends.remove(i);
-                    if (onlineFriends.get(0).getUsername().equals("")) {
-                        onlineFriends.remove(0);
-                    }
-                    onlineFriends.add(friend);
+            for (int i = 0; i < pendingFriends.size(); i++) {
+                if (friend.getUsername().equals(pendingFriends.get(i).getUsername())) {
+                    pendingFriends.remove(i);
                 }
             }
-            if (offlineFriends.isEmpty()) {
-                offlineFriends.add(new Friend("", false, null, "", false));
+            if (pendingFriends.isEmpty()) {
+                hasPendingFriends = false;
+                pendingFriends.add(new Friend("", false, null, ""));
+            }
+            if (friend.getOnlineStatus()) {
+                int i;
+                for (i = 0; i < offlineFriends.size(); i++) {
+                    if (friend.getUsername().equals(offlineFriends.get(i).getUsername())) {
+                        offlineFriends.remove(i);
+                        if (onlineFriends.get(0).getUsername().equals("")) {
+                            onlineFriends.remove(0);
+                        }
+                        onlineFriends.add(friend);
+                    }
+                }
+                if (offlineFriends.isEmpty()) {
+                    offlineFriends.add(new Friend("", false, null, ""));
+                }
+            }
+            else {
+                int i;
+                for (i = 0; i < onlineFriends.size(); i++) {
+                    if (friend.getUsername().equals(onlineFriends.get(i).getUsername())) {
+                        onlineFriends.remove(i);
+                        if (offlineFriends.get(0).getUsername().equals("")) {
+                            offlineFriends.remove(0);
+                        }
+                        offlineFriends.add(friend);
+                    }
+                }
+                if (onlineFriends.isEmpty()) {
+                    onlineFriends.add(new Friend("", false, null, ""));
+                }
             }
         }
         else {
-            int i;
-            for (i = 0; i < onlineFriends.size(); i++) {
-                if (friend.getUsername().equals(onlineFriends.get(i).getUsername())) {
-                    onlineFriends.remove(i);
-                    if (offlineFriends.get(0).getUsername().equals("")) {
-                        offlineFriends.remove(0);
+            if (friend.getOnlineStatus()) {
+
+                int i;
+                for (i = 0; i < offlineFriends.size(); i++) {
+                    if (friend.getUsername().equals(offlineFriends.get(i).getUsername())) {
+                        offlineFriends.remove(i);
+                        if (onlineFriends.get(0).getUsername().equals("")) {
+                            onlineFriends.remove(0);
+                        }
+                        onlineFriends.add(friend);
                     }
-                    offlineFriends.add(friend);
+                }
+                if (offlineFriends.isEmpty()) {
+                    offlineFriends.add(new Friend("", false, null, ""));
                 }
             }
-            if (onlineFriends.isEmpty()) {
-                onlineFriends.add(new Friend("", false, null, "", false));
+            else {
+                int i;
+                for (i = 0; i < onlineFriends.size(); i++) {
+                    if (friend.getUsername().equals(onlineFriends.get(i).getUsername())) {
+                        onlineFriends.remove(i);
+                        if (offlineFriends.get(0).getUsername().equals("")) {
+                            offlineFriends.remove(0);
+                        }
+                        offlineFriends.add(friend);
+                    }
+                }
+                if (onlineFriends.isEmpty()) {
+                    onlineFriends.add(new Friend("", false, null, ""));
+                }
             }
         }
     }
 
     /* adding friend */
     public void addFriend(Friend friend) {
-        friend.setAdd(false);
-        if (friend.getOnlineStatus()) {
+        if(friend.isPendingAdd()){
+            if(pendingFriends.get(0).getUsername().equals("")){
+                pendingFriends.remove(0);
+            }
+            pendingFriends.add(friend);
+            hasPendingFriends = true;
+        }
+        else if (friend.getOnlineStatus()) {
             if (onlineFriends.get(0).getUsername().equals("")) {
                 onlineFriends.remove(0);
             }
@@ -172,37 +230,6 @@ public class FriendsList implements Serializable {
             }
             offlineFriends.add(friend);
         }
-    }
-    public void sendRequest(Friend friend) {
-        
-            boolean available = true;
-            for(int i =0; i< onlineFriends.size(); i++){
-                if(onlineFriends.get(i).getUsername().equals(friend.getUsername())){
-                    available = false;
-                }
-            }
-            for(int i =0; i< offlineFriends.size(); i++){
-                if(offlineFriends.get(i).getUsername().equals(friend.getUsername())){
-                    available = false;
-                }
-            }
-            for(int i =0; i< pendingFriends.size(); i++){
-                if(pendingFriends.get(i).getUsername().equals(friend.getUsername())){
-                    available = false;
-                }
-            }
-            if(available){
-                if (pendingFriends.get(0).getUsername().equals("")) {
-                    pendingFriends.remove(0);
-                }
-                pendingFriends.add(friend);
-                friend.setAdd(true);
-                }
-                
-            else{
-                
-            }
-        
     }
 
     /* removing friend */
@@ -228,4 +255,9 @@ public class FriendsList implements Serializable {
         }
 
     }
+
+    public boolean hasPendingFriends() {
+        return hasPendingFriends;
+    }
+
 }

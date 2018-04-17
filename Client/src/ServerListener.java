@@ -76,7 +76,9 @@ public class ServerListener implements Runnable {
                 else if(obj.getClass().equals(BlockedFriendsList.class)){
                     myMainWindow.openBlockedFriendsListWindow((BlockedFriendsList)obj);
                 }
-                
+                else if(obj.getClass().equals(GetAllUsers.class)){
+                    myMainWindow.openAllUsersWindow((GetAllUsers)obj);
+                }
 
             } while (isConnected);
             myClient.close();
@@ -162,13 +164,25 @@ public class ServerListener implements Runnable {
             DeveloperWindow.displayMessage(ex.toString());
         }
     }
+    
+    public void getAllUsers(){
+        try {
+            out.writeObject(new GetAllUsers());
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: sending blockFriendsList packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
 
     public void addFriend(String friendName) {
         try {
-            out.writeObject(new AddFriend(friendName));
+            PendingFriendRequest temp = new PendingFriendRequest(friendName);
+            temp.setAsRequest();
+            out.writeObject(temp);
         }
         catch (IOException ex) {
-            DeveloperWindow.displayMessage("Error: sending AddFriend packet");
+            DeveloperWindow.displayMessage("Error: sending PendingFriendRequest packet");
             DeveloperWindow.displayMessage(ex.toString());
         }
     }
@@ -206,6 +220,18 @@ public class ServerListener implements Runnable {
     public void removeFriend(String friendName) {
         try {
             out.writeObject(new RemoveFriend(friendName));
+        }
+        catch (IOException ex) {
+            DeveloperWindow.displayMessage("Error: RemoveFriend packet");
+            DeveloperWindow.displayMessage(ex.toString());
+        }
+    }
+    
+    public void acceptFriendRequest(String friendName){
+        try {
+            PendingFriendRequest pfr = new PendingFriendRequest(friendName);
+            pfr.acceptRequest();
+            out.writeObject(pfr);
         }
         catch (IOException ex) {
             DeveloperWindow.displayMessage("Error: RemoveFriend packet");

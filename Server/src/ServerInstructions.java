@@ -77,14 +77,25 @@ public class ServerInstructions {
     public boolean removeFriend(String username, String friendName) {
         return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.RemoveFriend, username, friendName));
     }
-    
+
     /**
-     * 
+     * this adds friend to friend list as pending (has not been approved)
+     *
      * @param username
      * @param friendName
-     * @return 
+     * @return
      */
-    public boolean blockFriend(String username, String friendName){
+    public boolean addPendingFriendRequest(String username, String friendName) {
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.AddPendingFriend, username, friendName));
+    }
+
+    /**
+     *
+     * @param username
+     * @param friendName
+     * @return
+     */
+    public boolean blockFriend(String username, String friendName) {
         ExecuteUpdateDatabase(processSQLString(SQL_CALLS.BlockFromFriend, username, friendName));
         return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.BlockFriend, username, friendName));
     }
@@ -128,6 +139,17 @@ public class ServerInstructions {
     public boolean setCurrentStatus(String username, eCURRENT_STATUS currentStatus) {
         return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.UpdateCurrentStatus, username, currentStatus.toString()));
     }
+    
+    /**
+     * this will change the pending status of the friend request
+     * 
+     * @param username
+     * @param friendName
+     * @return 
+     */
+    public boolean updatePendingFriend(String username, String friendName){
+        return ExecuteUpdateDatabase(processSQLString(SQL_CALLS.ChangeFriendPending, username, friendName));
+    }
 
     /**
      * this will get get friend info from database, could be client requesting,
@@ -162,15 +184,43 @@ public class ServerInstructions {
         }
         return tempFriend;
     }
-    
-    public ArrayList<String> getBlockedFriendsList(String username){
+
+    public ArrayList<Friend> getAllUsers(String username) {
+
+        ArrayList<Friend> tempFriendList = new ArrayList<>();
+
+        String sqlString = processSQLString(SQL_CALLS.GetAllUsers, username);
+        ResultSet rs = ExecuteQueryDatabase(sqlString);
+
+        try {
+            while (rs.next()) {
+                boolean temp;
+                if (rs.getString(2).equals("1")) {
+                    temp = true;
+                }
+                else {
+                    temp = false;
+                }
+                Friend tempFriend = new Friend(rs.getString(1), temp, eCURRENT_STATUS.valueOf(rs.getString(3)), rs.getString(4));
+                tempFriendList.add(tempFriend);
+            }
+
+            return tempFriendList;
+        }
+        catch (SQLException e) {
+            myServer.writeToConsole("Error generating friends list for " + username + "\n");
+        }
+        return tempFriendList;
+    }
+
+    public ArrayList<String> getBlockedFriendsList(String username) {
+
         ArrayList<String> tempList = new ArrayList<>();
 
         String sqlString = processSQLString(SQL_CALLS.BlockFriendsList, username);
         ResultSet rs = ExecuteQueryDatabase(sqlString);
 
         try {
-            
             while (rs.next()) {
                 tempList.add(rs.getString(1));
             }
@@ -198,7 +248,7 @@ public class ServerInstructions {
         ResultSet rs = ExecuteQueryDatabase(sqlString);
 
         try {
-            
+
             while (rs.next()) {
                 boolean temp;
                 if (rs.getString(2).equals("1")) {
@@ -207,11 +257,12 @@ public class ServerInstructions {
                 else {
                     temp = false;
                 }
-                tempFriendList.add(new Friend(
-                        rs.getString(1),
-                        temp,
-                        eCURRENT_STATUS.valueOf(rs.getString(3)),
-                        rs.getString(4)));
+
+                Friend tempFriend = new Friend(rs.getString(1), temp, eCURRENT_STATUS.valueOf(rs.getString(3)), rs.getString(4));
+                if (rs.getString(5).equals("1")) {
+                    tempFriend.setPendingAdd(true);
+                }
+                tempFriendList.add(tempFriend);
             }
 
             return new FriendsList(tempFriendList);
@@ -344,32 +395,61 @@ public class ServerInstructions {
 
         switch (calls) {
             case Login:
-                sqlString = "SELECT username, password FROM user_credentials"
+                return "SELECT username, password FROM user_credentials"
                         + " WHERE username = '" + var1
                         + "' AND password = '" + var2 + "'";
-                break;
             case Register:
-                sqlString = "{ call register_user(?,?)}";
-                break;
-            case GetFriendsList:
-                return "SELECT username, online_status, current_status, text_status\n"
+                return "{ call register_user(?,?)}";
+            case GetAllUsers:
+                return "SELECT * FROM(\n"
+                        + "SELECT username, \n"
+                        + "		online_status, \n"
+                        + "        current_status, \n"
+                        + "        text_status,\n"
+                        + "        CASE\n"
+                        + "		WHEN pendingfriendrequest IS NULL OR pendingfriendrequest = '0' THEN '0' ELSE '1'  END AS pf,\n"
+                        + "        CASE \n"
+                        + "		WHEN blocked IS NULL OR blocked = '0' THEN '0' ELSE '1' END AS b,\n"
+                        + "        CASE \n"
+                        + "		WHEN blockedfromfriend IS NULL OR blockedfromfriend = '0' THEN '0' ELSE '1' END AS bff\n"
                         + "FROM user_credentials\n"
-                        + "WHERE EXISTS ( SELECT username\n"
-                        + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = 0 AND blockedfromfriend = 0)";
+                        + "LEFT OUTER JOIN " + var1 + "fl ON user_credentials.username = " + var1 + "fl.friend\n"
+                        + "UNION\n"
+                        + "SELECT username, \n"
+                        + "		online_status, \n"
+                        + "        current_status, \n"
+                        + "        text_status,\n"
+                        + "        CASE\n"
+                        + "		WHEN pendingfriendrequest IS NULL OR pendingfriendrequest = '0' THEN '0' ELSE '1'  END AS pf,\n"
+                        + "        CASE \n"
+                        + "		WHEN blocked IS NULL OR blocked = '0' THEN '0' ELSE '1' END AS b,\n"
+                        + "        CASE \n"
+                        + "		WHEN blockedfromfriend IS NULL OR blockedfromfriend = '0' THEN '0' ELSE '1' END AS bff\n"
+                        + "FROM user_credentials\n"
+                        + "RIGHT OUTER JOIN " + var1 + "fl ON user_credentials.username = " + var1 + "fl.friend\n"
+                        + ") AS tempT\n"
+                        + "WHERE pf = 0 AND b = 0 AND bff = 0 AND username != '" + var1 + "'";
+            case GetFriendsList:
+                return "SELECT username, online_status, current_status, text_status, pendingfriendrequest\n"
+                        + "FROM user_credentials\n"
+                        + "INNER JOIN " + var1 + "fl ON user_credentials.username = " + var1 + "fl.friend\n"
+                        + "WHERE blocked = 0 AND blockedfromfriend = 0";
             case GetOnlyOnlineFriends:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = 0) AND online_status = 1";
+                        + "WHERE username = friend AND blocked = 0 AND blockfromfriend = 0 AND pendingfriendrequest = 0) AND online_status = 1";
             case GetFriendInfo:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"
                         + "WHERE username = '" + var1 + "'";
             case AddFriend:
-                return "INSERT INTO " + var1 + "FL (friend,blocked,blockedfromfriend) VALUES ('"
-                        + var2 + "', 0, 0)";
+                return "INSERT INTO " + var1 + "FL (friend,blocked,blockedfromfriend,pendingfriendrequest) VALUES ('"
+                        + var2 + "', 0, 0, 0)";
+            case ChangeFriendPending:
+                return "UPDATE " + var1 + "fl SET pendingfriendrequest = 0"
+                        + " WHERE friend = '" + var2 + "'";
             case RemoveFriend:
                 return "DELETE FROM " + var1 + "FL WHERE friend = '" + var2 + "' AND blockedfromfriend = 0";
             case UpdateTextStatus:
@@ -385,10 +465,13 @@ public class ServerInstructions {
                 return "UPDATE " + var1 + "fl SET blocked = 1"
                         + " WHERE friend = '" + var2 + "'";
             case BlockFromFriend:
-                return "UPDATE " + var2 + "fl SET blockedfromfriend = 1"
-                        + " WHERE friend = '" + var1 + "'";
+                return "INSERT INTO "+ var2 + "fl (friend,blocked,blockedfromfriend,pendingfriendrequest) VALUES('"+ var1 +"',1,0,0)"
+                        + " ON DUPLICATE KEY UPDATE blockedfromfriend = 1";
             case BlockFriendsList:
                 return "SELECT friend FROM " + var1 + "fl WHERE blocked = 1";
+            case AddPendingFriend:
+                return "INSERT INTO " + var2 + "FL (friend,blocked,blockedfromfriend,pendingfriendrequest) VALUES ('"
+                        + var1 + "', 0, 0, 1)";
             default:
                 sqlString = null;
         }
@@ -412,7 +495,10 @@ public class ServerInstructions {
         UpdateCurrentStatus,
         BlockFriend,
         BlockFromFriend,
-        BlockFriendsList
+        BlockFriendsList,
+        AddPendingFriend,
+        GetAllUsers,
+        ChangeFriendPending
     }
 
 }

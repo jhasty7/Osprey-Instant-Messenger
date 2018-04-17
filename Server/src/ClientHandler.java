@@ -134,16 +134,45 @@ public class ClientHandler implements Runnable {
                 new Thread(new FileHandler(sfp)).start();
 
             }
-            else if (obj.getClass().equals(AddFriend.class)) {
-                boolean isSuccessful;
-                AddFriend addFriend = (AddFriend) obj;
+            else if (obj.getClass().equals(PendingFriendRequest.class)) {
 
-                isSuccessful = serverInstructions.addFriend(clientsUsername, addFriend.getFriend());
-                OutgoingPacketHandler.SendConfirmation(out, isSuccessful, "AddFriend");
-                if (isSuccessful) {
-                    Friend tempfriend = serverInstructions.getFriendInfoFromDatabase(addFriend.getFriend());
-                    tempfriend.setIsAdd(true);
-                    OutgoingPacketHandler.sendFriendToClient(out, tempfriend);
+                PendingFriendRequest pfr = (PendingFriendRequest) obj;
+                if (pfr.isRequesting()) {
+                    if (serverInstructions.addPendingFriendRequest(clientsUsername, pfr.getFriendname())) {
+                        for (User u : connectedUsers) {
+                            if (u.getUsersUsername().equals(pfr.getFriendname())) {
+                                Friend tempFriend = serverInstructions.getFriendInfoFromDatabase(clientsUsername);
+                                tempFriend.setPendingAdd(true);
+                                OutgoingPacketHandler.sendFriendToClient(u.getOut(), tempFriend);
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (pfr.isAccepting()) {
+                        if (serverInstructions.updatePendingFriend(clientsUsername, pfr.getFriendname())) {
+                            if (serverInstructions.addFriend(pfr.getFriendname(), clientsUsername)) {
+                                Friend tempFriend = serverInstructions.getFriendInfoFromDatabase(pfr.getFriendname());
+                                tempFriend.setIsAdd(true);
+                                OutgoingPacketHandler.sendFriendToClient(out, tempFriend);
+                                for (User u : connectedUsers) {
+                                    if (u.getUsersUsername().equals(pfr.getFriendname())) {
+                                        Friend tempFriendInner = serverInstructions.getFriendInfoFromDatabase(clientsUsername);
+                                        tempFriendInner.setAcceptedFriendRequest(true);
+                                        OutgoingPacketHandler.sendFriendToClient(u.getOut(), tempFriendInner);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if (pfr.isBlock()) {
+                            serverInstructions.blockFriend(clientsUsername, pfr.getFriendname());
+                        }
+                        else {
+                            serverInstructions.removeFriend(clientsUsername, pfr.getFriendname());
+                        }
+                    }
                 }
             }
             else if (obj.getClass().equals(RemoveFriend.class)) {
@@ -186,7 +215,7 @@ public class ClientHandler implements Runnable {
                     OutgoingPacketHandler.SendConfirmation(out, true, blockFriend.getFriend() + " is now blocked.");
                     OutgoingPacketHandler.SendFriendsList(out, serverInstructions.retrieveFriendsList(clientsUsername));
                     for (User u : connectedUsers) {
-                        if(u.getUsersUsername().equals(blockFriend.getFriend())){
+                        if (u.getUsersUsername().equals(blockFriend.getFriend())) {
                             OutgoingPacketHandler.sendBlockFriendPacket(u.getOut(), new BlockFriend(clientsUsername));
                             OutgoingPacketHandler.SendFriendsList(u.getOut(), serverInstructions.retrieveFriendsList(blockFriend.getFriend()));
                         }
@@ -196,7 +225,10 @@ public class ClientHandler implements Runnable {
                     OutgoingPacketHandler.SendConfirmation(out, false, blockFriend.getFriend() + " is NOT blocked, something went wrong.");
                 }
             }
-            else if (obj.getClass().equals(BlockedFriendsList.class)){
+            else if (obj.getClass().equals(GetAllUsers.class)) {
+                OutgoingPacketHandler.sendAllUsers(out, new GetAllUsers(serverInstructions.getAllUsers(clientsUsername)));
+            }
+            else if (obj.getClass().equals(BlockedFriendsList.class)) {
                 OutgoingPacketHandler.sendBlockedFriendsList(out, new BlockedFriendsList(serverInstructions.getBlockedFriendsList(clientsUsername)));
             }
             else {

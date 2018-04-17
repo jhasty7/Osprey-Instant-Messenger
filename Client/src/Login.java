@@ -10,7 +10,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -138,7 +137,7 @@ public class Login extends Application {
         
         primaryStage.getIcons().add(new Image("unf_icon.png"));
         primaryStage.setResizable(false);
-        primaryStage.setTitle("UNF Instant Messenger");
+        primaryStage.setTitle("Osprey Instant Messenger");
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(e -> {
             exit();

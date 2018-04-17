@@ -1,5 +1,8 @@
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,6 +40,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -46,7 +51,7 @@ import javafx.util.Callback;
 public class MainWindow extends Application {
 
     // very important variables/objects
-    private FriendsList myFriendsList;
+    private static volatile FriendsList myFriendsList;
     public static List<MessageWindow> myMessageWindows;
     private ServerListener serverListener;
     public static String username;
@@ -67,6 +72,10 @@ public class MainWindow extends Application {
     private MenuItem disconnectMenuItem;
     private MenuItem settingsMenuItem;
     private MenuItem exitMenuItem;
+    private Menu friendMenu;
+    private MenuItem pendingFriendsMenuItem;
+    private MenuItem addFriendsMenuItem;
+    private MenuItem searchFriendsMenuItem;
     private TextField statusTextField;
     private ListView onlineFriendsListView;
     private Label onlineFriendsListLabel;
@@ -76,8 +85,7 @@ public class MainWindow extends Application {
     private ObservableList<Friend> offlineFriendsObservableList;
     private HBox bottomHBox;
     private String mySelection;
-    private Button addFriendButton;
-    private Button addFriendSearchButton;
+    private TextFlow infostatusbar;
 
     private ArrayList<Friend> dummyStringList;
     private Rectangle statusRectangle;
@@ -135,16 +143,25 @@ public class MainWindow extends Application {
         menuBar = new MenuBar();
         menuBar.prefWidthProperty().bind(primaryStage.widthProperty());
 
-        blockListMenuItem = new MenuItem("Block List");
-        blockListMenuItem.setOnAction(new BlockFriendsListActionListener());
         disconnectMenuItem = new MenuItem("Disconnect");
         settingsMenuItem = new MenuItem("Settings");
         exitMenuItem = new MenuItem("Exit");
         fileMenu = new Menu("File");
-        fileMenu.getItems().addAll(blockListMenuItem, disconnectMenuItem, settingsMenuItem, exitMenuItem);
-        //blockListMenuItem.setOnAction();
+        fileMenu.getItems().addAll(disconnectMenuItem, settingsMenuItem, exitMenuItem);
 
-        menuBar.getMenus().addAll(fileMenu);
+        pendingFriendsMenuItem = new MenuItem("Friend Requests");
+        pendingFriendsMenuItem.setOnAction(new PendingFriendsListActionListener());
+        addFriendsMenuItem = new MenuItem("Add Friend by Name");
+        addFriendsMenuItem.setOnAction(new AddFriendButtonListener());
+        searchFriendsMenuItem = new MenuItem("Search for Friend");
+        searchFriendsMenuItem.setOnAction(new SearchAllFriendsActionListener());
+        blockListMenuItem = new MenuItem("Block List");
+        blockListMenuItem.setOnAction(new BlockFriendsListActionListener());
+        friendMenu = new Menu("Friends");
+        friendMenu.getItems().addAll(pendingFriendsMenuItem, addFriendsMenuItem,
+                searchFriendsMenuItem, blockListMenuItem);
+
+        menuBar.getMenus().addAll(fileMenu, friendMenu);
 
         /* menu items action listeners */
         disconnectMenuItem.setOnAction(new DisconnectMenuItemActionListener());
@@ -210,13 +227,19 @@ public class MainWindow extends Application {
         /* bottum HBox */
         bottomHBox = new HBox();
         bottomHBox.prefWidthProperty().bind(flowPane.widthProperty());
-        addFriendButton = new Button("Add Friend");
-        addFriendButton.setOnAction(new AddFriendButtonListener());
-        addFriendSearchButton = new Button("Search Friend");
+        infostatusbar = new TextFlow();
+        infostatusbar.setDisable(true);
+        infostatusbar.prefWidthProperty().bind(bottomHBox.prefWidthProperty());
 
-        //addFriendSearchButton.setOnAction();
-        bottomHBox.getChildren().add(addFriendButton);
-        bottomHBox.getChildren().add(addFriendSearchButton);
+        infostatusbar.getChildren().clear();
+        DateFormat df = new SimpleDateFormat("hh:mm   MM/dd/yy");
+        Date dateobj = new Date();
+        Text tempText = new Text("Logged in at: " + df.format(dateobj));
+        tempText.setFont(Font.font("Arial", FontWeight.EXTRA_LIGHT, FontPosture.REGULAR, 12));
+        tempText.setFill(Color.BLACK);
+        infostatusbar.getChildren().add(tempText);
+
+        bottomHBox.getChildren().add(infostatusbar);
 
         // TODO:
         // figure out what to put at the bottombox, time? maybe?
@@ -233,17 +256,21 @@ public class MainWindow extends Application {
         flowPane.getChildren().add(offlineFriendsListView);
         flowPane.getChildren().add(bottomHBox);
         /* GUI dimensions */
-        Scene scene = new Scene(flowPane, 300, 570, Color.WHITE);
+        Scene scene = new Scene(flowPane, 275, 490, Color.WHITE);
+        scene.getStylesheets().addAll(getClass().getResource("outline.css").toExternalForm());
         primaryStage.getIcons().add(new Image("unf_icon.png"));
         primaryStage.setResizable(true);
-        primaryStage.setTitle("UNF Instant Messenger");
+        primaryStage.setMinWidth(250);
+        primaryStage.setMinHeight(490);
+        primaryStage.setMaxWidth(400);
+        primaryStage.setMaxHeight(490);
+        primaryStage.setTitle("OspreyIM");
         primaryStage.setScene(scene);
         primaryStage.show();
         onlineFriendsListLabel.requestFocus();
         /* 
          * END GUI
         *****************/
-
     }
 
     /*
@@ -796,18 +823,48 @@ public class MainWindow extends Application {
         }
     }
 
+    private class PendingFriendsListActionListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            // already have pending friends in the friends list, just display
+            PendingFriendRequestWindow tempw = new PendingFriendRequestWindow(myFriendsList.getPendingFriends(), serverListener);
+            tempw.start(new Stage());
+        }
+    }
+
+    private class SearchAllFriendsActionListener implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            serverListener.getAllUsers();
+        }
+    }
+
+    private void checkPendingFriends() {
+        if (myFriendsList.hasPendingFriends()) {
+            infostatusbar.getChildren().clear();
+            Text tempText = new Text("New Friend Requests(!)");
+            tempText.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 14));
+            tempText.setFill(Color.LIME);
+            infostatusbar.getChildren().add(tempText);
+        }
+    }
+
     public void setFriendsList(FriendsList myFriendsList) {
         javafx.application.Platform.runLater(() -> {
+            this.myFriendsList = null;
             this.myFriendsList = myFriendsList;
+            checkPendingFriends();
             updateFriendsListGUI();
         });
     }
 
     public void processFriend(Friend friend) {
         javafx.application.Platform.runLater(() -> {
-            if(!friend.getOnlineStatus()){
-                for(MessageWindow w : myMessageWindows){
-                    if(w.getFriendName().equals(friend.getUsername())){
+            if (!friend.getOnlineStatus()) {
+                for (MessageWindow w : myMessageWindows) {
+                    if (w.getFriendName().equals(friend.getUsername())) {
                         w.closeChatWindow();
                     }
                 }
@@ -825,18 +882,35 @@ public class MainWindow extends Application {
                 this.myFriendsList.addFriend(friend);
                 updateFriendsListGUI();
             }
+            else if (friend.isPendingAdd()) {
+                this.myFriendsList.addFriend(friend);
+                updateFriendsListGUI();
+            }
+            else if (friend.isAcceptedFriendRequest()) {
+                friend.setAcceptedFriendRequest(false);
+                this.myFriendsList.addFriend(friend);
+                updateFriendsListGUI();
+            }
             else if (friend.isBlock()) {
 
             }
             else if (friend.isRemove()) {
 
             }
+            checkPendingFriends();
         });
     }
 
     public void openBlockedFriendsListWindow(BlockedFriendsList bfl) {
         javafx.application.Platform.runLater(() -> {
             BlockedFriendsListWindow tempw = new BlockedFriendsListWindow(bfl);
+            tempw.start(new Stage());
+        });
+    }
+
+    public void openAllUsersWindow(GetAllUsers gau) {
+        javafx.application.Platform.runLater(() -> {
+            AllUsersListWindow tempw = new AllUsersListWindow(gau, serverListener);
             tempw.start(new Stage());
         });
     }
