@@ -153,12 +153,12 @@ public class ClientHandler implements Runnable {
                         if (serverInstructions.updatePendingFriend(clientsUsername, pfr.getFriendname())) {
                             if (serverInstructions.addFriend(pfr.getFriendname(), clientsUsername)) {
                                 Friend tempFriend = serverInstructions.getFriendInfoFromDatabase(pfr.getFriendname());
-                                tempFriend.setIsAdd(true);
+                                tempFriend.setAcceptedFriendRequest(true);
                                 OutgoingPacketHandler.sendFriendToClient(out, tempFriend);
                                 for (User u : connectedUsers) {
                                     if (u.getUsersUsername().equals(pfr.getFriendname())) {
                                         Friend tempFriendInner = serverInstructions.getFriendInfoFromDatabase(clientsUsername);
-                                        tempFriendInner.setAcceptedFriendRequest(true);
+                                        tempFriendInner.setIsAdd(true);
                                         OutgoingPacketHandler.sendFriendToClient(u.getOut(), tempFriendInner);
                                     }
                                 }

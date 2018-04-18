@@ -326,6 +326,7 @@ public class ServerInstructions {
         catch (ClassNotFoundException | SQLException e) {
             System.out.println(e);
         }
+        
         return isSuccessful;
     }
 
@@ -439,7 +440,7 @@ public class ServerInstructions {
                         + "FROM user_credentials\n"
                         + "WHERE EXISTS ( SELECT username\n"
                         + "FROM " + var1 + "FL\n"
-                        + "WHERE username = friend AND blocked = 0 AND blockfromfriend = 0 AND pendingfriendrequest = 0) AND online_status = 1";
+                        + "WHERE username = friend AND blocked = 0 AND blockedfromfriend = 0 AND pendingfriendrequest = 0) AND online_status = 1";
             case GetFriendInfo:
                 return "SELECT username, online_status, current_status, text_status\n"
                         + "FROM user_credentials\n"

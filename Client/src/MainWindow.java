@@ -340,36 +340,26 @@ public class MainWindow extends Application {
      */
     private void updateFriendsListGUI() {
 
-        if (!myFriendsList.getOnlineFriends().isEmpty()) {
-            if (!myFriendsList.getOnlineFriends().get(0).getUsername().equals("")) {
-                onlineFriendsObservableList
-                        = FXCollections.observableArrayList(myFriendsList.getOnlineFriends());
-                onlineFriendsListView.setItems(onlineFriendsObservableList);
-                onlineFriendsListView.setDisable(false);
-            }
-
-            else {
-                onlineFriendsObservableList
-                        = FXCollections.observableArrayList(dummyStringList);
-                onlineFriendsListView.setItems(onlineFriendsObservableList);
-                onlineFriendsListView.setDisable(true);
-            }
+        if (myFriendsList.getOnlineFriends().isEmpty()) {
+            onlineFriendsListView.setItems(FXCollections.emptyObservableList());
+            onlineFriendsListView.setDisable(true);
         }
-        if (!myFriendsList.getOfflineFriends().isEmpty()) {
-            if (!myFriendsList.getOfflineFriends().get(0).getUsername().equals("")) {
-                offlineFriendsObservableList
-                        = FXCollections.observableArrayList(myFriendsList.getOfflineFriends());
-                offlineFriendsListView.setItems(offlineFriendsObservableList);
-                offlineFriendsListView.setDisable(false);
-            }
+        else {
+            onlineFriendsObservableList
+                    = FXCollections.observableArrayList(myFriendsList.getOnlineFriends());
+            onlineFriendsListView.setItems(onlineFriendsObservableList);
+            onlineFriendsListView.setDisable(false);
+        }
 
-            else {
-                offlineFriendsObservableList
-                        = FXCollections.observableArrayList(dummyStringList);
-                offlineFriendsListView.setItems(offlineFriendsObservableList);
-                offlineFriendsListView.setDisable(true);
-            }
-
+        if (myFriendsList.getOfflineFriends().isEmpty()) {
+            offlineFriendsListView.setItems(FXCollections.emptyObservableList());
+            offlineFriendsListView.setDisable(true);
+        }
+        else {
+            offlineFriendsObservableList
+                    = FXCollections.observableArrayList(myFriendsList.getOfflineFriends());
+            offlineFriendsListView.setItems(offlineFriendsObservableList);
+            offlineFriendsListView.setDisable(false);
         }
     }
 
@@ -828,8 +818,10 @@ public class MainWindow extends Application {
         @Override
         public void handle(ActionEvent event) {
             // already have pending friends in the friends list, just display
-            PendingFriendRequestWindow tempw = new PendingFriendRequestWindow(myFriendsList.getPendingFriends(), serverListener);
-            tempw.start(new Stage());
+            if (myFriendsList.hasPendingFriends()) {
+                PendingFriendRequestWindow tempw = new PendingFriendRequestWindow(myFriendsList.getPendingFriends(), serverListener);
+                tempw.start(new Stage());
+            }
         }
     }
 
@@ -847,6 +839,13 @@ public class MainWindow extends Application {
             Text tempText = new Text("New Friend Requests(!)");
             tempText.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 14));
             tempText.setFill(Color.LIME);
+            infostatusbar.getChildren().add(tempText);
+        }
+        else {
+            infostatusbar.getChildren().clear();
+            Text tempText = new Text("No new friend Requests");
+            tempText.setFont(Font.font("Arial", FontWeight.BOLD, FontPosture.REGULAR, 12));
+            tempText.setFill(Color.BLACK);
             infostatusbar.getChildren().add(tempText);
         }
     }
@@ -870,6 +869,7 @@ public class MainWindow extends Application {
                 }
             }
             if (friend.isUpdate()) {
+                friend.setIsUpdate(false);
                 this.myFriendsList.updateFriend(friend);
                 updateFriendsListGUI();
             }
@@ -879,6 +879,7 @@ public class MainWindow extends Application {
                 statusTextField.setText(myTextStatus);
             }
             else if (friend.isAdd()) {
+                friend.setIsAdd(false);
                 this.myFriendsList.addFriend(friend);
                 updateFriendsListGUI();
             }
@@ -887,8 +888,7 @@ public class MainWindow extends Application {
                 updateFriendsListGUI();
             }
             else if (friend.isAcceptedFriendRequest()) {
-                friend.setAcceptedFriendRequest(false);
-                this.myFriendsList.addFriend(friend);
+                this.myFriendsList.updateFriend(friend);
                 updateFriendsListGUI();
             }
             else if (friend.isBlock()) {
